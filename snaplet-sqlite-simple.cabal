@@ -31,6 +31,9 @@ Library
     Snap.Snaplet.SqliteSimple
     Snap.Snaplet.Auth.Backends.SqliteSimple
 
+  other-modules:
+    Paths_snaplet_sqlite_simple
+
   build-depends:
     base                       >= 4       && < 5,
     bytestring                 >= 0.9.1   && < 0.10,
