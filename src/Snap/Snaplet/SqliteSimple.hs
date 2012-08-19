@@ -69,7 +69,7 @@ module Snap.Snaplet.SqliteSimple (
   , execute
   , execute_
 
-  -- Re-exported from postgresql-simple
+  -- Re-exported from sqlite-simple
   , S.Connection
   , S.Query
   , S.Only(..)
@@ -103,8 +103,8 @@ import           Paths_snaplet_sqlite_simple
 
 
 ------------------------------------------------------------------------------
--- | The state for the postgresql-simple snaplet. To use it in your app
--- include this in your application state and use pgsInit to initialize it.
+-- | The state for the sqlite-simple snaplet. To use it in your app
+-- include this in your application state and use 'sqliteInit' to initialize it.
 data Sqlite = Sqlite
     { sqlitePool :: Pool S.Connection
     -- ^ Function for retrieving the connection pool
@@ -114,9 +114,9 @@ data Sqlite = Sqlite
 ------------------------------------------------------------------------------
 -- | Instantiate this typeclass on 'Handler b YourAppState' so this snaplet
 -- can find the connection source.  If you need to have multiple instances of
--- the postgres snaplet in your application, then don't provide this instance
+-- the sqlite snaplet in your application, then don't provide this instance
 -- and leverage the default instance by using \"@with dbLens@\" in front of calls
--- to snaplet-postgresql-simple functions.
+-- to snaplet-sqlite-simple functions.
 class (MonadCatchIO m) => HasSqlite m where
     getSqliteState :: m Sqlite
 
@@ -157,10 +157,10 @@ logErr err m = do
 ------------------------------------------------------------------------------
 -- | Initialize the snaplet
 sqliteInit :: SnapletInit b Sqlite
-sqliteInit = makeSnaplet "postgresql-simple" description datadir $ do
+sqliteInit = makeSnaplet "sqlite-simple" description datadir $ do
     config <- getSnapletUserConfig
     (mci,errs) <- runWriterT $ do
-        db <- logErr "Must specify postgres db filename" $ C.lookup config "db"
+        db <- logErr "Must specify db filename" $ C.lookup config "db"
         return $ db
     let ci = fromMaybe (error $ intercalate "\n" errs) mci
 

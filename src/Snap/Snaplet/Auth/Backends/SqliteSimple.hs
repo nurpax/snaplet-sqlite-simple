@@ -70,7 +70,7 @@ initSqliteAuth
   :: Lens b (Snaplet SessionManager)  -- ^ Lens to the session snaplet
   -> Snaplet Sqlite  -- ^ The sqlite snaplet
   -> SnapletInit b (AuthManager b)
-initSqliteAuth sess db = makeSnaplet "sqliteql-auth" desc datadir $ do
+initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
     config <- getSnapletUserConfig
     authTable <- liftIO $ C.lookupDefault "snap_auth_user" config "authTable"
     authSettings <- authSettingsFromConfig
@@ -101,9 +101,9 @@ initSqliteAuth sess db = makeSnaplet "sqliteql-auth" desc datadir $ do
 createTableIfMissing :: SqliteAuthManager -> IO ()
 createTableIfMissing SqliteAuthManager{..} = do
     withResource pamConnPool $ \conn -> do
-        res <- S.query_ conn $ Query $
-          "select relname from pg_class where relname='"
-          `T.append` tblName pamTable `T.append` "'"
+        res <- S.query conn
+               (Query "SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+               (Only (tblName pamTable))
         when (null (res :: [Only T.Text])) $
           S.execute_ conn (Query q) >> return ()
     return ()
@@ -209,14 +209,14 @@ defAuthTable :: AuthTable
 defAuthTable
   =  AuthTable
   {  tblName             = "snap_auth_user"
-  ,  colId               = ("uid", "INT PRIMARY KEY")
+  ,  colId               = ("uid", "INTEGER PRIMARY KEY")
   ,  colLogin            = ("login", "text UNIQUE NOT NULL")
   ,  colPassword         = ("password", "text")
   ,  colActivatedAt      = ("activated_at", "timestamp")
   ,  colSuspendedAt      = ("suspended_at", "timestamp")
   ,  colRememberToken    = ("remember_token", "text")
-  ,  colLoginCount       = ("login_count", "INT NOT NULL")
-  ,  colFailedLoginCount = ("failed_login_count", "INT NOT NULL")
+  ,  colLoginCount       = ("login_count", "INTEGER NOT NULL")
+  ,  colFailedLoginCount = ("failed_login_count", "INTEGER NOT NULL")
   ,  colLockedOutUntil   = ("locked_out_until", "timestamp")
   ,  colCurrentLoginAt   = ("current_login_at", "timestamp")
   ,  colLastLoginAt      = ("last_login_at", "timestamp")
@@ -336,4 +336,3 @@ instance IAuthBackend SqliteAuthManager where
                 , " = ?"
                 ]
         authExecute pamConnPool q [userLogin]
-
