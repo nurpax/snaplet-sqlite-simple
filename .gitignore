@@ -3,3 +3,6 @@ dist/
 example/dist/
 example/site_key.txt
 example/test.db
+example/log/*.log
+example/snaplets/sqlite-auth/
+example/snaplets/sqlite-simple/
