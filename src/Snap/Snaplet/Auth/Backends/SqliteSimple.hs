@@ -209,21 +209,21 @@ defAuthTable :: AuthTable
 defAuthTable
   =  AuthTable
   {  tblName             = "snap_auth_user"
-  ,  colId               = ("uid", "SERIAL PRIMARY KEY")
+  ,  colId               = ("uid", "INT PRIMARY KEY")
   ,  colLogin            = ("login", "text UNIQUE NOT NULL")
   ,  colPassword         = ("password", "text")
-  ,  colActivatedAt      = ("activated_at", "timestamptz")
-  ,  colSuspendedAt      = ("suspended_at", "timestamptz")
+  ,  colActivatedAt      = ("activated_at", "timestamp")
+  ,  colSuspendedAt      = ("suspended_at", "timestamp")
   ,  colRememberToken    = ("remember_token", "text")
-  ,  colLoginCount       = ("login_count", "integer NOT NULL")
-  ,  colFailedLoginCount = ("failed_login_count", "integer NOT NULL")
-  ,  colLockedOutUntil   = ("locked_out_until", "timestamptz")
-  ,  colCurrentLoginAt   = ("current_login_at", "timestamptz")
-  ,  colLastLoginAt      = ("last_login_at", "timestamptz")
+  ,  colLoginCount       = ("login_count", "INT NOT NULL")
+  ,  colFailedLoginCount = ("failed_login_count", "INT NOT NULL")
+  ,  colLockedOutUntil   = ("locked_out_until", "timestamp")
+  ,  colCurrentLoginAt   = ("current_login_at", "timestamp")
+  ,  colLastLoginAt      = ("last_login_at", "timestamp")
   ,  colCurrentLoginIp   = ("current_login_ip", "text")
   ,  colLastLoginIp      = ("last_login_ip", "text")
-  ,  colCreatedAt        = ("created_at", "timestamptz")
-  ,  colUpdatedAt        = ("updated_at", "timestamptz")
+  ,  colCreatedAt        = ("created_at", "timestamp")
+  ,  colUpdatedAt        = ("updated_at", "timestamp")
   ,  rolesTable          = "user_roles"
   }
 
