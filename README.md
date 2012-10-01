@@ -12,6 +12,6 @@ screen that persists user information in a SQLite database.
 
 For sqlite-simple usage examples, visit the [sqlite-simple homepage](http://github.com/nurpax/sqlite-simple).
 
-This snaplet is based on [snaplet-postgresql-simple](http://github.com/mightybyte/snaplet-postgresql-simple).
+This snaplet is based on the [snaplet-postgresql-simple](http://github.com/mightybyte/snaplet-postgresql-simple).
 
 [![Build Status](https://secure.travis-ci.org/nurpax/snaplet-sqlite-simple.png)](http://travis-ci.org/nurpax/snaplet-sqlite-simple)
