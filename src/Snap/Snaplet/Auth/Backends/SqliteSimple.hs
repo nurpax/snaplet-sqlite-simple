@@ -284,9 +284,11 @@ saveQuery at u@AuthUser{..} = maybe insertQuery updateQuery userId
 instance IAuthBackend SqliteAuthManager where
     save SqliteAuthManager{..} u@AuthUser{..} = do
         let (qstr, params) = saveQuery pamTable u
-        let q = Query qstr
         withResource pamConnPool $ \conn -> do
-            S.execute conn q params
+            -- Note that the user INSERT here expects that duplicate
+            -- login error checking has been done already at the level
+            -- that calls here.
+            S.execute conn (Query qstr) params
             let q2 = Query $ T.concat
                      [ "select * from "
                      , tblName pamTable
@@ -295,7 +297,9 @@ instance IAuthBackend SqliteAuthManager where
                      , " = ?"
                      ]
             res <- S.query conn q2 [userLogin]
-            return $ fromMaybe u $ listToMaybe res
+            case res of
+              [savedUser] -> return $ Right savedUser
+              _           -> return . Left $ AuthError "snaplet-sqlite-simple: Failed user save"
 
     lookupByUserId SqliteAuthManager{..} uid = do
         let q = Query $ T.concat
