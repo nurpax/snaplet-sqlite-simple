@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 ------------------------------------------------------------------------------
 -- | This module is where all the routes and handlers are defined for your
@@ -21,7 +21,8 @@ import           Snap.Snaplet.Heist
 import           Snap.Snaplet.Session.Backends.CookieSession
 import           Snap.Snaplet.SqliteSimple
 import           Snap.Util.FileServe
-import           Text.Templating.Heist
+import           Heist()
+import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
 
@@ -29,9 +30,9 @@ import           Application
 ------------------------------------------------------------------------------
 -- | Render login form
 handleLogin :: Maybe T.Text -> Handler App (AuthManager App) ()
-handleLogin authError = heistLocal (bindSplices errs) $ render "login"
+handleLogin authError = heistLocal (I.bindSplices errs) $ render "login"
   where
-    errs = [("loginError", textSplice c) | c <- maybeToList authError]
+    errs = [("loginError", I.textSplice c) | c <- maybeToList authError]
 
 
 ------------------------------------------------------------------------------
@@ -53,10 +54,17 @@ handleLogout = logout >> redirect "/"
 ------------------------------------------------------------------------------
 -- | Handle new user form submit
 handleNewUser :: Handler App (AuthManager App) ()
-handleNewUser = method GET handleForm <|> method POST handleFormSubmit
+handleNewUser =
+  method GET (renderNewUserForm Nothing) <|> method POST handleFormSubmit
   where
-    handleForm = render "new_user"
-    handleFormSubmit = registerUser "login" "password" >> redirect "/"
+    handleFormSubmit = do
+      authUser <- registerUser "login" "password"
+      either (renderNewUserForm . Just) (\_ -> redirect "/") authUser
+
+    renderNewUserForm (err :: Maybe AuthFailure) =
+      heistLocal (I.bindSplices errs) $ render "new_user"
+      where
+        errs = [("newUserError", I.textSplice . T.pack . show $ c) | c <- maybeToList err]
 
 
 ------------------------------------------------------------------------------
