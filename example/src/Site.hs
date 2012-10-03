@@ -10,9 +10,13 @@ module Site
 
 ------------------------------------------------------------------------------
 import           Control.Applicative
+import           Control.Monad.Trans (liftIO)
 import           Data.ByteString (ByteString)
+import           Data.Lens.Common (getL)
 import           Data.Maybe
+import           Data.Pool (withResource)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import           Snap.Core
 import           Snap.Snaplet
 import           Snap.Snaplet.Auth
@@ -25,33 +29,33 @@ import           Heist()
 import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
+import           Model
 
+type H = Handler App (AuthManager App)
 
-------------------------------------------------------------------------------
 -- | Render login form
 handleLogin :: Maybe T.Text -> Handler App (AuthManager App) ()
-handleLogin authError = heistLocal (I.bindSplices errs) $ render "login"
+handleLogin authError =
+  heistLocal (I.bindSplices errs) $ render "login"
   where
     errs = [("loginError", I.textSplice c) | c <- maybeToList authError]
 
 
-------------------------------------------------------------------------------
 -- | Handle login submit
-handleLoginSubmit :: Handler App (AuthManager App) ()
+handleLoginSubmit :: H ()
 handleLoginSubmit =
-    loginUser "login" "password" Nothing
-              (\_ -> handleLogin err) (redirect "/")
+  loginUser "login" "password" Nothing
+    (\_ -> handleLogin err)
+    (redirect "/")
   where
     err = Just "Unknown user or password"
 
 
-------------------------------------------------------------------------------
 -- | Logs out and redirects the user to the site index.
-handleLogout :: Handler App (AuthManager App) ()
+handleLogout :: H ()
 handleLogout = logout >> redirect "/"
 
 
-------------------------------------------------------------------------------
 -- | Handle new user form submit
 handleNewUser :: Handler App (AuthManager App) ()
 handleNewUser =
@@ -66,18 +70,55 @@ handleNewUser =
       where
         errs = [("newUserError", I.textSplice . T.pack . show $ c) | c <- maybeToList err]
 
+-- | Run actions with a logged in user or set error
+withLoggedInUser :: (User -> H ()) -> H ()
+withLoggedInUser action = do
+  currentUser >>= go
+  where
+    go Nothing = handleLogin (Just "Must be logged in to view the main page")
+    go (Just u) =
+      maybe
+        (return ())
+        (\uid -> action (user uid)) (userId u)
+        where
+          user uid = User (read . T.unpack $ unUid uid) (userLogin u)
 
-------------------------------------------------------------------------------
+
+renderComment :: Monad m => Comment -> I.Splice m
+renderComment (Comment _ saved text) = do
+  I.runChildrenWithText [ ("savedOn", T.pack . show $ saved)
+                        , ("comment", text)]
+
+handleCommentSubmit :: H ()
+handleCommentSubmit = method POST (withLoggedInUser go)
+  where
+    go user = do
+      c <- getParam "comment"
+      maybe (return ()) (\t -> withTop db (saveComment user (T.decodeUtf8 t))) c
+      redirect "/index"
+
+-- | Render main page
+mainPage :: H ()
+mainPage = withLoggedInUser go
+  where
+    go :: User -> H ()
+    go user = do
+      comments <- withTop db $ listComments user
+      heistLocal (splices comments) $ render "/index"
+    splices cs =
+      I.bindSplices [("comments", I.mapSplices renderComment cs)]
+
 -- | The application's routes.
 routes :: [(ByteString, Handler App App ())]
-routes = [ ("/login",    with auth handleLoginSubmit)
-         , ("/logout",   with auth handleLogout)
-         , ("/new_user", with auth handleNewUser)
-         , ("",          serveDirectory "static")
+routes = [ ("/login",        with auth handleLoginSubmit)
+         , ("/logout",       with auth handleLogout)
+         , ("/new_user",     with auth handleNewUser)
+         , ("/index",        with auth mainPage)
+         , ("/save_comment", with auth handleCommentSubmit)
+         , ("",              serveDirectory "static")
          ]
 
 
-------------------------------------------------------------------------------
 -- | The application initializer.
 app :: SnapletInit App App
 app = makeSnaplet "app" "An snaplet example application." Nothing $ do
@@ -88,6 +129,11 @@ app = makeSnaplet "app" "An snaplet example application." Nothing $ do
     -- Initialize auth that's backed by an sqlite database
     d <- nestSnaplet "db" db sqliteInit
     a <- nestSnaplet "auth" auth $ initSqliteAuth sess d
+
+    -- Grab the DB connection pool from the sqlite snaplet and call
+    -- into the Model to create all the DB tables if necessary.
+    let connPool = sqlitePool $ getL snapletValue d
+    liftIO $ withResource connPool $ \conn -> createTables conn
 
     addRoutes routes
     addAuthSplices auth
