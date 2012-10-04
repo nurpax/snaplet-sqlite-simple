@@ -44,14 +44,15 @@ handleLogin authError =
   where
     errs = [("loginError", I.textSplice c) | c <- maybeToList authError]
 
--- | Handle login submit
+-- | Handle login submit.  Either redirect to '/' on success or give
+-- an error.  We deliberately do NOT show the AuthFailure on the login
+-- error, as we don't want to reveal to visitors whether or not the
+-- login exists in the user database.
 handleLoginSubmit :: H ()
 handleLoginSubmit =
   loginUser "login" "password" Nothing
-    (\_ -> handleLogin err)
+    (const . handleLogin . Just $ "Unknown login or incorrect password")
     (redirect "/")
-  where
-    err = Just "Unknown user or password"
 
 -- | Logs out and redirects the user to the site index.
 handleLogout :: H ()
@@ -64,7 +65,7 @@ handleNewUser =
   where
     handleFormSubmit = do
       authUser <- registerUser "login" "password"
-      either (renderNewUserForm . Just) (\_ -> redirect "/") authUser
+      either (renderNewUserForm . Just) (const $ redirect "/") authUser
 
     renderNewUserForm (err :: Maybe AuthFailure) =
       heistLocal (I.bindSplices errs) $ render "new_user"
