@@ -33,6 +33,10 @@ import qualified Db
 
 type H = Handler App (AuthManager App)
 
+maybeWhen :: Monad m => Maybe a -> (a -> m ()) -> m ()
+maybeWhen Nothing _  = return ()
+maybeWhen (Just a) f = f a
+
 -- | Render login form
 handleLogin :: Maybe T.Text -> H ()
 handleLogin authError =
@@ -67,31 +71,28 @@ handleNewUser =
       where
         errs = [("newUserError", I.textSplice . T.pack . show $ c) | c <- maybeToList err]
 
--- | Run actions with a logged in user or set error
+-- | Run actions with a logged in user or go back to the login screen
 withLoggedInUser :: (Db.User -> H ()) -> H ()
-withLoggedInUser action = do
+withLoggedInUser action =
   currentUser >>= go
   where
-    go Nothing = handleLogin (Just "Must be logged in to view the main page")
-    go (Just u) =
-      maybe
-        (return ())
-        (\uid -> action (user uid)) (userId u)
-        where
-          user uid = Db.User (read . T.unpack $ unUid uid) (userLogin u)
-
-renderComment :: Monad m => Db.Comment -> I.Splice m
-renderComment (Db.Comment _ saved text) = do
-  I.runChildrenWithText [ ("savedOn", T.pack . show $ saved)
-                        , ("comment", text)]
+    go Nothing  = handleLogin (Just "Must be logged in to view the main page")
+    go (Just u) = maybeWhen (userId u) (action . user)
+      where
+        user uid = Db.User (read . T.unpack $ unUid uid) (userLogin u)
 
 handleCommentSubmit :: H ()
 handleCommentSubmit = method POST (withLoggedInUser go)
   where
     go user = do
       c <- getParam "comment"
-      maybe (return ()) (\t -> withTop db (Db.saveComment user (T.decodeUtf8 t))) c
-      redirect "/index"
+      maybeWhen c (withTop db . Db.saveComment user . T.decodeUtf8)
+      redirect "/"
+
+renderComment :: Monad m => Db.Comment -> I.Splice m
+renderComment (Db.Comment _ saved text) =
+  I.runChildrenWithText [ ("savedOn", T.pack . show $ saved)
+                        , ("comment", text)]
 
 -- | Render main page
 mainPage :: H ()

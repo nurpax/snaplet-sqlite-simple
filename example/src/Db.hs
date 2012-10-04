@@ -43,7 +43,7 @@ createTables conn = do
   -- table too and use it to keep track of schema version and
   -- implement your schema upgrade procedure here.
   schemaCreated <- tableExists conn "comments"
-  unless schemaCreated $ do
+  unless schemaCreated $
     S.execute_ conn
       (S.Query $
        T.concat [ "CREATE TABLE comments ("
