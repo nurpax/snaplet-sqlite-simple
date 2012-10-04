@@ -29,17 +29,16 @@ import           Heist()
 import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
-import           Model
+import qualified Db
 
 type H = Handler App (AuthManager App)
 
 -- | Render login form
-handleLogin :: Maybe T.Text -> Handler App (AuthManager App) ()
+handleLogin :: Maybe T.Text -> H ()
 handleLogin authError =
   heistLocal (I.bindSplices errs) $ render "login"
   where
     errs = [("loginError", I.textSplice c) | c <- maybeToList authError]
-
 
 -- | Handle login submit
 handleLoginSubmit :: H ()
@@ -50,14 +49,12 @@ handleLoginSubmit =
   where
     err = Just "Unknown user or password"
 
-
 -- | Logs out and redirects the user to the site index.
 handleLogout :: H ()
 handleLogout = logout >> redirect "/"
 
-
 -- | Handle new user form submit
-handleNewUser :: Handler App (AuthManager App) ()
+handleNewUser :: H ()
 handleNewUser =
   method GET (renderNewUserForm Nothing) <|> method POST handleFormSubmit
   where
@@ -71,7 +68,7 @@ handleNewUser =
         errs = [("newUserError", I.textSplice . T.pack . show $ c) | c <- maybeToList err]
 
 -- | Run actions with a logged in user or set error
-withLoggedInUser :: (User -> H ()) -> H ()
+withLoggedInUser :: (Db.User -> H ()) -> H ()
 withLoggedInUser action = do
   currentUser >>= go
   where
@@ -81,11 +78,10 @@ withLoggedInUser action = do
         (return ())
         (\uid -> action (user uid)) (userId u)
         where
-          user uid = User (read . T.unpack $ unUid uid) (userLogin u)
+          user uid = Db.User (read . T.unpack $ unUid uid) (userLogin u)
 
-
-renderComment :: Monad m => Comment -> I.Splice m
-renderComment (Comment _ saved text) = do
+renderComment :: Monad m => Db.Comment -> I.Splice m
+renderComment (Db.Comment _ saved text) = do
   I.runChildrenWithText [ ("savedOn", T.pack . show $ saved)
                         , ("comment", text)]
 
@@ -94,16 +90,16 @@ handleCommentSubmit = method POST (withLoggedInUser go)
   where
     go user = do
       c <- getParam "comment"
-      maybe (return ()) (\t -> withTop db (saveComment user (T.decodeUtf8 t))) c
+      maybe (return ()) (\t -> withTop db (Db.saveComment user (T.decodeUtf8 t))) c
       redirect "/index"
 
 -- | Render main page
 mainPage :: H ()
 mainPage = withLoggedInUser go
   where
-    go :: User -> H ()
+    go :: Db.User -> H ()
     go user = do
-      comments <- withTop db $ listComments user
+      comments <- withTop db $ Db.listComments user
       heistLocal (splices comments) $ render "/index"
     splices cs =
       I.bindSplices [("comments", I.mapSplices renderComment cs)]
@@ -113,15 +109,18 @@ routes :: [(ByteString, Handler App App ())]
 routes = [ ("/login",        with auth handleLoginSubmit)
          , ("/logout",       with auth handleLogout)
          , ("/new_user",     with auth handleNewUser)
-         , ("/index",        with auth mainPage)
          , ("/save_comment", with auth handleCommentSubmit)
-         , ("",              serveDirectory "static")
+         , ("/",             with auth mainPage)
+         , ("/static",       serveDirectory "static")
          ]
-
 
 -- | The application initializer.
 app :: SnapletInit App App
 app = makeSnaplet "app" "An snaplet example application." Nothing $ do
+    -- addRoutes must be called before heistInit - heist wants to
+    -- serve "" itself which means our mainPage handler never gets a
+    -- chance to get called.
+    addRoutes routes
     h <- nestSnaplet "" heist $ heistInit "templates"
     s <- nestSnaplet "sess" sess $
            initCookieSessionManager "site_key.txt" "sess" (Just 3600)
@@ -133,9 +132,8 @@ app = makeSnaplet "app" "An snaplet example application." Nothing $ do
     -- Grab the DB connection pool from the sqlite snaplet and call
     -- into the Model to create all the DB tables if necessary.
     let connPool = sqlitePool $ getL snapletValue d
-    liftIO $ withResource connPool $ \conn -> createTables conn
+    liftIO $ withResource connPool $ \conn -> Db.createTables conn
 
-    addRoutes routes
     addAuthSplices auth
     return $ App h s d a
 

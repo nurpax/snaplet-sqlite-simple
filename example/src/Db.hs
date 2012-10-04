@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
-module Model (
+module Db (
     User(..)
   , Comment(..)
   , createTables
@@ -36,6 +36,7 @@ tableExists conn tblName = do
     [Only (_ :: String)] -> return True
     _ -> return False
 
+-- | Create the necessary database tables, if not already initialized.
 createTables :: S.Connection -> IO ()
 createTables conn = do
   -- Note: for a bigger app, you probably want to create a 'version'
@@ -51,10 +52,12 @@ createTables conn = do
                 , "saved_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, "
                 , "comment TEXT)"])
 
+-- | Retrieve a user's list of comments
 listComments :: User -> Handler App Sqlite [Comment]
 listComments (User uid _) =
   query "SELECT id,saved_on,comment FROM comments WHERE user_id = ?" (Only uid)
 
+-- | Save a new comment for a user
 saveComment :: User -> T.Text -> Handler App Sqlite ()
 saveComment (User uid _) c =
   execute "INSERT INTO comments (user_id,comment) VALUES (?,?)" (uid, c)
