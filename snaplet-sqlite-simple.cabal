@@ -1,7 +1,7 @@
 name:           snaplet-sqlite-simple
 version:        0.2.0
 synopsis:       sqlite-simple snaplet for the Snap Framework
-description:    This snaplet contains support for using the SQLite
+description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
                 sqlite-simple package.  It also includes an
                 authentication backend.
