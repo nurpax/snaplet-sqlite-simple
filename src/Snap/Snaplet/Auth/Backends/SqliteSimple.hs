@@ -67,7 +67,7 @@ data SqliteAuthManager = SqliteAuthManager
 -- | Initializer for the sqlite backend to the auth snaplet.
 --
 initSqliteAuth
-  :: Lens b (Snaplet SessionManager)  -- ^ Lens to the session snaplet
+  :: SnapletLens b SessionManager  -- ^ Lens to the session snaplet
   -> Snaplet Sqlite  -- ^ The sqlite snaplet
   -> SnapletInit b (AuthManager b)
 initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
@@ -77,7 +77,7 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
     key <- liftIO $ getKey (asSiteKey authSettings)
     let tableDesc = defAuthTable { tblName = authTable }
     let manager = SqliteAuthManager tableDesc $
-                                      sqlitePool $ getL snapletValue db
+                                      sqlitePool $ db ^# snapletValue
     liftIO $ createTableIfMissing manager
     rng <- liftIO mkRNG
     return $ AuthManager

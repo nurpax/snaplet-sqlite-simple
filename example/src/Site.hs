@@ -11,8 +11,8 @@ module Site
 ------------------------------------------------------------------------------
 import           Control.Applicative
 import           Control.Monad.Trans (liftIO)
+import           Control.Lens
 import           Data.ByteString (ByteString)
-import           Data.Lens.Common (getL)
 import           Data.Maybe
 import           Data.Pool (withResource)
 import qualified Data.Text as T
@@ -133,7 +133,7 @@ app = makeSnaplet "app" "An snaplet example application." Nothing $ do
 
     -- Grab the DB connection pool from the sqlite snaplet and call
     -- into the Model to create all the DB tables if necessary.
-    let connPool = sqlitePool $ getL snapletValue d
+    let connPool = sqlitePool $ d ^# snapletValue
     liftIO $ withResource connPool $ \conn -> Db.createTables conn
 
     addAuthSplices auth
