@@ -39,6 +39,7 @@ Executable snaplet-test
     snap-core,
     snap-server,
     snap,
+    snaplet-sqlite-simple,
     stm                        >= 2.4,
     syb                        >= 0.1,
     test-framework             >= 0.6      && < 0.7,

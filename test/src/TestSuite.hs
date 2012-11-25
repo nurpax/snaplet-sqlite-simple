@@ -5,59 +5,20 @@ module Main where
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
-import           Control.Exception
+import           Control.Exception hiding (Handler)
 import           Control.Monad
-import           Control.Lens
-import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.ByteString.Char8 as S
-import qualified Network.HTTP.Conduit    as HTTP
 import           Prelude hiding (catch)
 import           Snap.Http.Server.Config
-import           Snap.Snaplet
 import           System.IO
-import           System.Posix.Process
-import           System.Posix.Signals
-import           System.Posix.Types
 import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.HUnit hiding (Test, path)
 ------------------------------------------------------------------------------
---import qualified Snap.Snaplet.Auth.Tests
 
-import           Snap.Http.Server (simpleHttpServe)
-import           Snap.Snaplet
-import           Snap.Snaplet.Auth
-import           Snap.Snaplet.Session
-import           Snap.Snaplet.Auth.Backends.JsonFile
-import           Snap.Snaplet.Session.Backends.CookieSession
+import           Snap
 
+import           App
 import           SafeCWD
+import qualified Tests as Tests
 
-
-------------------------------------------------------------------------------
-data App = App
-    { _sess :: Snaplet SessionManager
-    , _auth :: Snaplet (AuthManager App)
-    }
-
-makeLenses ''App
-
-
-------------------------------------------------------------------------------
-appInit :: SnapletInit App App
-appInit = makeSnaplet "app" "Test application" Nothing $ do
-
-    s <- nestSnaplet "sess" sess $
-           initCookieSessionManager "site_key.txt" "sess" (Just 3600)
-
-    a <- nestSnaplet "auth" auth authInit
-
-    return $ App s a
-
-
-------------------------------------------------------------------------------
-authInit :: SnapletInit App (AuthManager App)
-authInit = initJsonFileAuthManager defAuthSettings sess "users.json"
 
 ------------------------------------------------------------------------------
 main :: IO ()
@@ -69,8 +30,7 @@ main = do
     takeMVar mvar
 
   where tests = mutuallyExclusive $
-                testGroup "snap" [ ]
---                                 , Snap.Snaplet.Auth.Tests.tests
+                  testGroup "snaplet-sqlite-simple" [Tests.tests]
 
 
 ------------------------------------------------------------------------------
