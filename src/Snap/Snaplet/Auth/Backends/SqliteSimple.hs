@@ -131,6 +131,7 @@ instance FromRow AuthUser where
         AuthUser
         <$> _userId
         <*> _userLogin
+        <*> _userEmail
         <*> _userPassword
         <*> _userActivatedAt
         <*> _userSuspendedAt
@@ -144,11 +145,14 @@ instance FromRow AuthUser where
         <*> _userLastLoginIp
         <*> _userCreatedAt
         <*> _userUpdatedAt
+        <*> _userResetToken
+        <*> _userResetRequestedAt
         <*> _userRoles
         <*> _userMeta
       where
         !_userId               = field
         !_userLogin            = field
+        !_userEmail            = pure Nothing
         !_userPassword         = field
         !_userActivatedAt      = field
         !_userSuspendedAt      = field
@@ -162,6 +166,8 @@ instance FromRow AuthUser where
         !_userLastLoginIp      = field
         !_userCreatedAt        = field
         !_userUpdatedAt        = field
+        !_userResetToken       = pure Nothing
+        !_userResetRequestedAt = pure Nothing
         !_userRoles            = pure []
         !_userMeta             = pure HM.empty
 
@@ -203,6 +209,7 @@ data AuthTable
   ,  colUpdatedAt        :: (Text, Text)
   ,  rolesTable          :: Text
   }
+
 
 -- | Default authentication table layout
 defAuthTable :: AuthTable
