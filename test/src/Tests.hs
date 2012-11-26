@@ -5,7 +5,6 @@ module Tests
 
 
 ------------------------------------------------------------------------------
-import           Control.Monad.Trans (liftIO)
 import qualified Data.Map as M
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
