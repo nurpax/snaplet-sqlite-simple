@@ -22,14 +22,15 @@ import qualified Tests as Tests
 
 ------------------------------------------------------------------------------
 main :: IO ()
-main = do
-  (tid, mvar) <- inDir False "non-cabal-appdir" startServer
-  defaultMain [tests] `finally` killThread tid
-
-  putStrLn "waiting for termination mvar"
-  takeMVar mvar
-
+main =
+  inDir True "non-cabal-appdir" runTests
   where
+    runTests = do
+      (tid, mvar) <- startServer
+      defaultMain [tests] `finally` killThread tid
+      putStrLn "waiting for termination mvar"
+      takeMVar mvar
+
     tests = mutuallyExclusive $
               testGroup "snaplet-sqlite-simple" [Tests.tests]
 
