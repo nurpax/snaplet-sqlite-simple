@@ -5,22 +5,12 @@
 module App where
 
 ------------------------------------------------------------------------------
-import           Control.Concurrent
-import           Control.Exception hiding (Handler)
 import           Control.Lens
 import           Control.Monad
-import qualified Network.HTTP.Conduit    as HTTP
 import           Prelude hiding (catch)
-import           Snap.Http.Server.Config
-import           System.IO
-import           System.Posix.Process
-import           System.Posix.Signals hiding (Handler)
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
 ------------------------------------------------------------------------------
 
 import           Snap
-import           Snap.Http.Server (simpleHttpServe)
 import           Snap.Snaplet.Auth
 import           Snap.Snaplet.Session
 import           Snap.Snaplet.SqliteSimple
