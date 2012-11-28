@@ -26,5 +26,6 @@ inDir startClean dir action = bracket before after (const action)
         setCurrentDirectory cwd
         signalQSem sem
 
+removeDirectoryRecursiveSafe :: String -> IO ()
 removeDirectoryRecursiveSafe p =
     doesDirectoryExist p >>= flip when (removeDirectoryRecursive p)
