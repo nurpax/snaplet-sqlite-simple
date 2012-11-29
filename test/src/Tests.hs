@@ -50,11 +50,10 @@ isRight :: Either a b -> Bool
 isRight (Left _) = False
 isRight (Right _) = True
 
-dropTables :: IO ()
-dropTables = do
-  conn <- open "test.db"
+dropTables :: Connection -> IO ()
+dropTables conn = do
   execute_ conn "DROP TABLE IF EXISTS snap_auth_user"
-  close conn
+  execute_ conn "DROP TABLE IF EXISTS snap_auth_user_version"
 
 -- Must be the first on the test list for basic database
 -- initialization (schema creation for snap_auth_user, etc.)
@@ -62,7 +61,9 @@ testInitDbEmpty :: Test
 testInitDbEmpty = testCase "snaplet database init" go
   where
     go = do
-      dropTables
+      conn <- open "test.db"
+      dropTables conn
+      close conn
       (_, _handler, _doCleanup) <- runSnaplet Nothing appInit
       assertBool "init ok" True
 
@@ -87,7 +88,7 @@ addFooUserSchema0 =
 testInitDbSchema0 :: Test
 testInitDbSchema0 = testCase "init db with schema0" $ do
   conn <- open "test.db"
-  execute_ conn "DROP TABLE IF EXISTS snap_auth_user"
+  dropTables conn
   execute_ conn initSchema0
   close conn
   (_, _handler, _doCleanup) <- runSnaplet Nothing appInit
@@ -99,7 +100,7 @@ testInitDbSchema0 = testCase "init db with schema0" $ do
 testInitDbSchema0WithUser :: Test
 testInitDbSchema0WithUser = testCase "init + add foo user directly" $ do
   conn <- open "test.db"
-  execute_ conn "DROP TABLE IF EXISTS snap_auth_user"
+  dropTables conn
   execute_ conn initSchema0
   execute_ conn addFooUserSchema0
   close conn
