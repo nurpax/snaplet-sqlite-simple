@@ -134,7 +134,7 @@ instance HasSqlite (Handler b Sqlite) where
 -- > d <- nestSnaplet "db" db pgsInit
 -- > count <- liftIO $ runReaderT (execute "INSERT ..." params) d
 instance (MonadCatchIO m) => HasSqlite (ReaderT (Snaplet Sqlite) m) where
-    getSqliteState = asks (getL snapletValue)
+    getSqliteState = asks (\sqlsnaplet -> sqlsnaplet ^# snapletValue)
 
 
 ------------------------------------------------------------------------------

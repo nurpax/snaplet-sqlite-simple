@@ -1,10 +1,21 @@
 name:           snaplet-sqlite-simple
-version:        0.2.0
+version:        0.3.0
 synopsis:       sqlite-simple snaplet for the Snap Framework
 description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
                 sqlite-simple package.  It also includes an
                 authentication backend.
+                .
+                See
+                <https://github.com/nurpax/snaplet-sqlite-simple/tree/master/example>
+                for an example project that demonstrates the use of
+                this snaplet.  It implements a stand-alone application
+                with a login screen that persists user information in
+                a SQLite database and allows a logged in user to save
+                comments.  Querying and listing comments demonstrates
+                how a user of snaplet-sqlite-simple might relate
+                Snaplet.Auth based AuthUsers to his own tables.
+
 license:        BSD3
 license-file:   LICENSE
 author:         Janne Hellsten, Doug Beardsley
@@ -37,14 +48,14 @@ Library
   build-depends:
     base                       >= 4       && < 5,
     bytestring                 >= 0.9.1   && < 0.11,
-    clientsession              >= 0.7.2   && < 0.9,
+    clientsession              >= 0.8     && < 0.9,
     configurator               >= 0.2     && < 0.3,
     MonadCatchIO-transformers  >= 0.3     && < 0.4,
     mtl                        >= 2       && < 3,
     sqlite-simple              >= 0.1     && < 1.0,
     direct-sqlite              >= 2.0     && < 2.3,
     resource-pool-catchio      >= 0.2     && < 0.3,
-    snap                       >= 0.9     && < 0.10,
+    snap                       >= 0.10    && < 0.11,
     text                       >= 0.11    && < 0.12,
     transformers               >= 0.2     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3
