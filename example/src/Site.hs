@@ -10,7 +10,6 @@ module Site
 
 ------------------------------------------------------------------------------
 import           Control.Applicative
-import           Control.Monad ((<=<))
 import           Control.Monad.Trans (liftIO, lift)
 import           Control.Monad.Trans.Either
 import           Control.Error.Safe (tryJust)
@@ -70,12 +69,15 @@ handleNewUser =
   where
     handleFormSubmit = do
       authUser <- registerUser "login" "password"
-      either (renderNewUserForm . Just) (const $ redirect "/") authUser
+      either (renderNewUserForm . Just) login authUser
 
     renderNewUserForm (err :: Maybe AuthFailure) =
       heistLocal (I.bindSplices errs) $ render "new_user"
       where
         errs = [("newUserError", I.textSplice . T.pack . show $ c) | c <- maybeToList err]
+
+    login user = logRunEitherT $ do
+      lift $ forceLogin user >> (return $ redirect "/")
 
 -- | Run actions with a logged in user or go back to the login screen
 withLoggedInUser :: (Db.User -> H ()) -> H ()
@@ -83,10 +85,10 @@ withLoggedInUser action =
   currentUser >>= go
   where
     go Nothing  = handleLogin (Just "Must be logged in to view the main page")
-    go (Just u) = logFail <=< runEitherT $ do
+    go (Just u) = logRunEitherT $ do
       uid  <- tryJust "withLoggedInUser: missing uid" (userId u)
       uid' <- hoistEither (reader T.decimal (unUid uid))
-      lift $ action (Db.User uid' (userLogin u))
+      return $ action (Db.User uid' (userLogin u))
 
 handleCommentSubmit :: H ()
 handleCommentSubmit = method POST (withLoggedInUser go)

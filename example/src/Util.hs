@@ -3,8 +3,10 @@
 module Util (
     reader
   , logFail
+  , logRunEitherT
   ) where
 
+import           Control.Monad.Trans.Either
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Read as T
@@ -23,10 +25,13 @@ reader p s =
     Right (_, _) -> Left "readParser: input not exhausted"
     Left e -> Left e
 
--- | Log Either Left values or do nothing.  To be used in situations
--- where to user shouldn't see an error (either due to it being
--- irrelevant or due to security) but we want to leave a trace of the
--- error case anyway.
-logFail :: Either String () -> H ()
-logFail = either (logError . T.encodeUtf8 . T.pack)  (\_ -> return ())
+-- | Log Either Left values or run the Handler action.  To be used in
+-- situations where to user shouldn't see an error (either due to it
+-- being irrelevant or due to security) but we want to leave a trace
+-- of the error case anyway.
+logFail :: Either String (H ()) -> H ()
+logFail = either (logError . T.encodeUtf8 . T.pack) id
 
+
+logRunEitherT :: EitherT String H (H ()) -> H ()
+logRunEitherT e = runEitherT e >>= logFail
