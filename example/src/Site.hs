@@ -10,13 +10,17 @@ module Site
 
 ------------------------------------------------------------------------------
 import           Control.Applicative
-import           Control.Monad.Trans (liftIO)
+import           Control.Monad ((<=<))
+import           Control.Monad.Trans (liftIO, lift)
+import           Control.Monad.Trans.Either
+import           Control.Error.Safe (tryJust)
 import           Control.Lens
 import           Data.ByteString (ByteString)
 import           Data.Maybe
 import           Data.Pool (withResource)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import qualified Data.Text.Read as T
 import           Snap.Core
 import           Snap.Snaplet
 import           Snap.Snaplet.Auth
@@ -30,6 +34,7 @@ import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
 import qualified Db
+import           Util
 
 type H = Handler App (AuthManager App)
 
@@ -78,9 +83,10 @@ withLoggedInUser action =
   currentUser >>= go
   where
     go Nothing  = handleLogin (Just "Must be logged in to view the main page")
-    go (Just u) = maybeWhen (userId u) (action . user)
-      where
-        user uid = Db.User (read . T.unpack $ unUid uid) (userLogin u)
+    go (Just u) = logFail <=< runEitherT $ do
+      uid  <- tryJust "withLoggedInUser: missing uid" (userId u)
+      uid' <- hoistEither (reader T.decimal (unUid uid))
+      lift $ action (Db.User uid' (userLogin u))
 
 handleCommentSubmit :: H ()
 handleCommentSubmit = method POST (withLoggedInUser go)
