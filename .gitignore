@@ -7,3 +7,4 @@ example/log/*.log
 example/snaplets/sqlite-auth/
 example/snaplets/sqlite-simple/
 test/.hpc
+non-cabal-appdir/
