@@ -1,4 +1,7 @@
 language: haskell
-script:
+install:
+  - cabal update
   - cabal install --enable-tests
-  - cd example && cabal install
+script:
+  - cd example
+  - cabal install
