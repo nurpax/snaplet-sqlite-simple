@@ -62,6 +62,7 @@ module Snap.Snaplet.SqliteSimple (
     Sqlite(..)
   , HasSqlite(..)
   , sqliteInit
+  , withSqlite
 
   -- * Wrappers and re-exports
   , query
