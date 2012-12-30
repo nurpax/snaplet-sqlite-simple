@@ -38,29 +38,29 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Concurrent
 import qualified Data.Configurator as C
 import qualified Data.HashMap.Lazy as HM
-import qualified Data.Text as T
-import           Data.Text (Text)
 import           Data.Maybe
-import           Data.Pool
-import           Database.SQLite3 (SQLData(..))
+import           Data.Text (Text)
+import qualified Data.Text as T
 import qualified Database.SQLite.Simple as S
-import qualified Database.SQLite.Simple.ToField as S
 import           Database.SQLite.Simple.FromField
 import           Database.SQLite.Simple.FromRow
+import qualified Database.SQLite.Simple.ToField as S
 import           Database.SQLite.Simple.Types
+import           Database.SQLite3 (SQLData(..))
+import           Paths_snaplet_sqlite_simple
 import           Snap
 import           Snap.Snaplet.Auth
-import           Snap.Snaplet.SqliteSimple
 import           Snap.Snaplet.Session
+import           Snap.Snaplet.SqliteSimple
 import           Web.ClientSession
-import           Paths_snaplet_sqlite_simple
 
 
 data SqliteAuthManager = SqliteAuthManager
     { pamTable    :: AuthTable
-    , pamConnPool :: Pool S.Connection
+    , pamConnPool :: MVar S.Connection
     }
 
 
@@ -162,7 +162,7 @@ upgradeSchema conn pam fromVersion = do
 -- | Create the user table if it doesn't exist.
 createTableIfMissing :: SqliteAuthManager -> IO ()
 createTableIfMissing SqliteAuthManager{..} = do
-    withResource pamConnPool $ \conn -> do
+    withMVar pamConnPool $ \conn -> do
       authTblExists <- tableExists conn $ tblName pamTable
       unless authTblExists $ createInitialSchema conn pamTable
       upgradeSchema conn pamTable 0
@@ -225,14 +225,14 @@ instance FromRow AuthUser where
 
 
 querySingle :: (ToRow q, FromRow a)
-            => Pool S.Connection -> Query -> q -> IO (Maybe a)
-querySingle pool q ps = withResource pool $ \conn -> return . listToMaybe =<<
+            => MVar S.Connection -> Query -> q -> IO (Maybe a)
+querySingle pool q ps = withMVar pool $ \conn -> return . listToMaybe =<<
     S.query conn q ps
 
 authExecute :: ToRow q
-            => Pool S.Connection -> Query -> q -> IO ()
+            => MVar S.Connection -> Query -> q -> IO ()
 authExecute pool q ps = do
-    withResource pool $ \conn -> S.execute conn q ps
+    withMVar pool $ \conn -> S.execute conn q ps
     return ()
 
 instance S.ToField Password where
@@ -351,7 +351,7 @@ saveQuery at u@AuthUser{..} = maybe insertQuery updateQuery userId
 instance IAuthBackend SqliteAuthManager where
     save SqliteAuthManager{..} u@AuthUser{..} = do
         let (qstr, params) = saveQuery pamTable u
-        withResource pamConnPool $ \conn -> do
+        withMVar pamConnPool $ \conn -> do
             -- Note that the user INSERT here expects that duplicate
             -- login error checking has been done already at the level
             -- that calls here.
