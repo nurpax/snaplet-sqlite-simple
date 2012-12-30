@@ -78,7 +78,7 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
     key <- liftIO $ getKey (asSiteKey authSettings)
     let tableDesc = defAuthTable { tblName = authTable }
     let manager = SqliteAuthManager tableDesc $
-                                      sqlitePool $ db ^# snapletValue
+                                      sqliteConn $ db ^# snapletValue
     liftIO $ createTableIfMissing manager
     rng <- liftIO mkRNG
     return $ AuthManager

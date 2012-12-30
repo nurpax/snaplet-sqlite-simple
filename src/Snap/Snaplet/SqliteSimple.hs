@@ -107,8 +107,8 @@ import           Paths_snaplet_sqlite_simple
 -- | The state for the sqlite-simple snaplet. To use it in your app
 -- include this in your application state and use 'sqliteInit' to initialize it.
 data Sqlite = Sqlite
-    { sqlitePool :: MVar S.Connection
-    -- ^ Function for retrieving the connection pool
+    { sqliteConn :: MVar S.Connection
+    -- ^ Function for retrieving the database connection
     }
 
 
@@ -179,8 +179,8 @@ withSqlite :: (HasSqlite m)
        => (S.Connection -> IO b) -> m b
 withSqlite f = do
     s <- getSqliteState
-    let pool = sqlitePool s
-    liftIO $ withMVar pool f
+    let conn = sqliteConn s
+    liftIO $ withMVar conn f
 
 ------------------------------------------------------------------------------
 -- | See 'P.query'
