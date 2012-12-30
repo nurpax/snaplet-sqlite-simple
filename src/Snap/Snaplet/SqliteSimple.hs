@@ -132,7 +132,7 @@ instance HasSqlite (Handler b Sqlite) where
 -- | A convenience instance to make it easier to use this snaplet in the
 -- Initializer monad like this:
 --
--- > d <- nestSnaplet "db" db pgsInit
+-- > d <- nestSnaplet "db" db sqliteInit
 -- > count <- liftIO $ runReaderT (execute "INSERT ..." params) d
 instance (MonadCatchIO m) => HasSqlite (ReaderT (Snaplet Sqlite) m) where
     getSqliteState = asks (\sqlsnaplet -> sqlsnaplet ^# snapletValue)
