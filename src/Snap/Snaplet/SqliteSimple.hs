@@ -86,6 +86,7 @@ module Snap.Snaplet.SqliteSimple (
 
 import           Prelude hiding (catch)
 
+import           Control.Concurrent
 import           Control.Monad.CatchIO hiding (Handler)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
@@ -94,7 +95,6 @@ import           Control.Monad.Trans.Writer
 import qualified Data.Configurator as C
 import           Data.List
 import           Data.Maybe
-import           Data.Pool
 import           Database.SQLite.Simple.ToRow
 import           Database.SQLite.Simple.FromRow
 import qualified Database.SQLite.Simple as S
@@ -107,8 +107,8 @@ import           Paths_snaplet_sqlite_simple
 -- | The state for the sqlite-simple snaplet. To use it in your app
 -- include this in your application state and use 'sqliteInit' to initialize it.
 data Sqlite = Sqlite
-    { sqlitePool :: Pool S.Connection
-    -- ^ Function for retrieving the connection pool
+    { sqliteConn :: MVar S.Connection
+    -- ^ Function for retrieving the database connection
     }
 
 
@@ -165,12 +165,8 @@ sqliteInit = makeSnaplet "sqlite-simple" description datadir $ do
         return $ db
     let ci = fromMaybe (error $ intercalate "\n" errs) mci
 
-    stripes <- liftIO $ C.lookupDefault 1 config "numStripes"
-    idle <- liftIO $ C.lookupDefault 5 config "idleTime"
-    resources <- liftIO $ C.lookupDefault 20 config "maxResourcesPerStripe"
-    pool <- liftIO $ createPool (S.open ci) S.close stripes
-                                (realToFrac (idle :: Double)) resources
-    return $ Sqlite pool
+    conn <- liftIO $ (S.open ci >>= newMVar)
+    return $ Sqlite conn
   where
     description = "Sqlite abstraction"
     datadir = Just $ liftM (++"/resources/db") getDataDir
@@ -183,9 +179,8 @@ withSqlite :: (HasSqlite m)
        => (S.Connection -> IO b) -> m b
 withSqlite f = do
     s <- getSqliteState
-    let pool = sqlitePool s
-    liftIO $ withResource pool f
-
+    let conn = sqliteConn s
+    liftIO $ withMVar conn f
 
 ------------------------------------------------------------------------------
 -- | See 'P.query'
