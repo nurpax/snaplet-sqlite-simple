@@ -175,6 +175,12 @@ sqliteInit = makeSnaplet "sqlite-simple" description datadir $ do
 ------------------------------------------------------------------------------
 -- | Convenience function for executing a function that needs a database
 -- connection.
+--
+-- /Multi-threading considerations/: The database connection is mutexed
+-- such that only a single thread can read or write at any given time.
+-- This means we lose database access parallelism.  Please see
+-- <https://github.com/nurpax/snaplet-sqlite-simple/issues/5> for more
+-- information.
 withSqlite :: (HasSqlite m)
        => (S.Connection -> IO b) -> m b
 withSqlite f = do
@@ -183,20 +189,26 @@ withSqlite f = do
     liftIO $ withMVar conn f
 
 ------------------------------------------------------------------------------
--- | See 'P.query'
+-- | See 'S.query'
+--
+-- See also 'withSqlite' for notes on concurrent access.
 query :: (HasSqlite m, ToRow q, FromRow r)
       => S.Query -> q -> m [r]
 query q params = withSqlite (\c -> S.query c q params)
 
 
 ------------------------------------------------------------------------------
--- | See 'P.query_'
+-- | See 'S.query_'
+--
+-- See also 'withSqlite' for notes on concurrent access.
 query_ :: (HasSqlite m, FromRow r) => S.Query -> m [r]
 query_ q = withSqlite (\c -> S.query_ c q)
 
 
 ------------------------------------------------------------------------------
 -- |
+--
+-- See also 'withSqlite' for notes on concurrent access.
 execute :: (HasSqlite m, ToRow q, MonadCatchIO m)
         => S.Query -> q -> m ()
 execute template qs = withSqlite (\c -> S.execute c template qs)
@@ -204,6 +216,8 @@ execute template qs = withSqlite (\c -> S.execute c template qs)
 
 ------------------------------------------------------------------------------
 -- |
+--
+-- See also 'withSqlite' for notes on concurrent access.
 execute_ :: (HasSqlite m, MonadCatchIO m)
          => S.Query -> m ()
 execute_ template = withSqlite (\c -> S.execute_ c template)
