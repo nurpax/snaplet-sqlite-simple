@@ -28,7 +28,7 @@ Executable example
     snap-core >= 0.9 && < 0.11,
     snap-server >= 0.9 && < 0.11,
     snap-loader-static >= 0.9 && < 0.11,
-    snaplet-sqlite-simple >= 0.1 && < 1.0,
+    snaplet-sqlite-simple >= 0.4 && < 1.0,
     sqlite-simple >= 0.1 && < 1.0,
     text >= 0.11 && < 0.12,
     time >= 1.1 && < 1.5,
