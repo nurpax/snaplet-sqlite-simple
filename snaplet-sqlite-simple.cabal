@@ -85,7 +85,7 @@ test-suite test
     configurator               >= 0.1      && < 0.3,
     containers                 >= 0.3,
     directory                  >= 1.0      && < 1.3,
-    errors                     >= 1.3.1    && < 1.4,
+    errors                     >= 1.3.1    && < 1.5,
     lens                       >= 3.7.0.1  && < 3.9,
     mtl                        >= 2,
     snap-core,
