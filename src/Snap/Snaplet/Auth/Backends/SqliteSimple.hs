@@ -39,8 +39,9 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Configurator as C
-import qualified Data.HashMap.Lazy as HM
 import           Data.Maybe
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -152,6 +153,10 @@ upgradeSchema conn pam fromVersion = do
       S.execute_ conn (addColumnQ (colResetToken pam))
       S.execute_ conn (addColumnQ (colResetRequestedAt pam))
 
+    upgrade 2 = do
+      S.execute_ conn (addColumnQ (colRoles pam))
+      S.execute_ conn (addColumnQ (colMeta pam))
+
     upgrade _ = error "unknown version"
 
     addColumnQ (c,t) =
@@ -167,6 +172,7 @@ createTableIfMissing SqliteAuthManager{..} = do
       unless authTblExists $ createInitialSchema conn pamTable
       upgradeSchema conn pamTable 0
       upgradeSchema conn pamTable 1
+      upgradeSchema conn pamTable 2
 
 
 buildUid :: Int -> UserId
@@ -199,8 +205,8 @@ instance FromRow AuthUser where
         <*> _userUpdatedAt
         <*> _userResetToken
         <*> _userResetRequestedAt
-        <*> _userRoles
-        <*> _userMeta
+        <*> fmap (fromJust . A.decode' . BL.fromStrict) _userRoles
+        <*> fmap (fromJust . A.decode' . BL.fromStrict) _userMeta
       where
         !_userId               = field
         !_userLogin            = field
@@ -220,8 +226,8 @@ instance FromRow AuthUser where
         !_userUpdatedAt        = field
         !_userResetToken       = field
         !_userResetRequestedAt = field
-        !_userRoles            = pure []
-        !_userMeta             = pure HM.empty
+        !_userRoles            = field
+        !_userMeta             = field
 
 
 querySingle :: (ToRow q, FromRow a)
@@ -288,6 +294,8 @@ defAuthTable
   ,  colUpdatedAt        = ("updated_at", "timestamp")
   ,  colResetToken       = ("reset_token", "text")
   ,  colResetRequestedAt = ("reset_requested_at", "timestamp")
+  ,  colRoles            = ("roles_json", "blob")
+  ,  colMeta             = ("meta_json", "blob")
   }
 
 -- | List of deconstructors so it's easier to extract column names from an
@@ -312,6 +320,8 @@ colDef =
   , (colUpdatedAt       , S.toField . userUpdatedAt)
   , (colResetToken      , S.toField . userResetToken)
   , (colResetRequestedAt, S.toField . userResetRequestedAt)
+  , (colRoles           , S.toField . A.encode . userRoles)
+  , (colMeta            , S.toField . A.encode . userMeta)
   ]
 
 colNames :: AuthTable -> T.Text
@@ -341,6 +351,7 @@ saveQuery at u@AuthUser{..} = maybe insertQuery updateQuery userId
                   , " = ?"
                   ]
         , params ++ [S.toField $ unUid uid])
+    -- The list of column names
     cols = map (fst . ($at) . fst) $ tail colDef
     vals = map (const "?") cols
     params = map (($u) . snd) $ tail colDef
