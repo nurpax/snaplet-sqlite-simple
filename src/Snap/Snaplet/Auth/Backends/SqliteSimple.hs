@@ -43,6 +43,7 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Configurator as C
 import           Data.Maybe
+import qualified Data.HashMap.Lazy as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Database.SQLite.Simple as S
@@ -205,8 +206,8 @@ instance FromRow AuthUser where
         <*> _userUpdatedAt
         <*> _userResetToken
         <*> _userResetRequestedAt
-        <*> fmap (fromJust . A.decode' . BL.fromStrict) _userRoles
-        <*> fmap (fromJust . A.decode' . BL.fromStrict) _userMeta
+        <*> fmap ((fromMaybe []) . A.decode' . BL.fromStrict) _userRoles
+        <*> fmap ((fromMaybe HM.empty) . A.decode' . BL.fromStrict) _userMeta
       where
         !_userId               = field
         !_userLogin            = field
@@ -268,6 +269,8 @@ data AuthTable
   ,  colUpdatedAt        :: (Text, Text)
   ,  colResetToken       :: (Text, Text)
   ,  colResetRequestedAt :: (Text, Text)
+  ,  colRoles            :: (Text, Text)
+  ,  colMeta             :: (Text, Text)
   }
 
 
@@ -294,8 +297,8 @@ defAuthTable
   ,  colUpdatedAt        = ("updated_at", "timestamp")
   ,  colResetToken       = ("reset_token", "text")
   ,  colResetRequestedAt = ("reset_requested_at", "timestamp")
-  ,  colRoles            = ("roles_json", "blob")
-  ,  colMeta             = ("meta_json", "blob")
+  ,  colRoles            = ("roles_json", "blob not null default x''")
+  ,  colMeta             = ("meta_json", "blob not null default x''")
   }
 
 -- | List of deconstructors so it's easier to extract column names from an
