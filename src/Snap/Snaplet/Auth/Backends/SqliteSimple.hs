@@ -40,9 +40,10 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
 ------------------------------------------------------------------------------
 import           Control.Concurrent
 import qualified Data.Aeson as A
+import           Data.ByteString (ByteString)
 import qualified Data.Configurator as C
-import           Data.Maybe
 import qualified Data.HashMap.Lazy as HM
+import           Data.Maybe
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -231,13 +232,18 @@ instance FromRow AuthUser where
         !_userRoles            = field :: RowParser (Maybe LT.Text)
         !_userMeta             = field :: RowParser (Maybe LT.Text)
 
+        decodeRoles :: RowParser [Role]
         decodeRoles = do
-          roles <- fmap (fmap (maybeToList . A.decode' . LT.encodeUtf8)) _userRoles
+          roles <- fmap (fmap (map Role) . textDecodeBS) _userRoles
           return $ fromMaybe [] roles
 
         decodeMeta = do
           meta <- fmap (fmap (fromMaybe HM.empty . A.decode' . LT.encodeUtf8)) _userMeta
           return $ fromMaybe HM.empty meta
+
+        textDecodeBS :: Maybe LT.Text -> Maybe [ByteString]
+        textDecodeBS Nothing  = Nothing
+        textDecodeBS (Just t) = A.decode' . LT.encodeUtf8 $ t
 
 
 querySingle :: (ToRow q, FromRow a)

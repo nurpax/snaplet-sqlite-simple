@@ -166,7 +166,7 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
                            A.toJSON $ T.pack "yes")
                         , (T.pack "suppress-products",
                            A.toJSON [T.pack "Kryptonite"]) ]
-          
+
     checkUpdatedUser (Left _) = assertBool "failed saveUser" False
     checkUpdatedUser (Right u) = do
       assertEqual "login rename ok?"  "bar" (userLogin u)
