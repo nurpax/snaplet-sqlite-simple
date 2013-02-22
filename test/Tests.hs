@@ -6,6 +6,9 @@ module Tests
 
 
 ------------------------------------------------------------------------------
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Char8 as BL
+import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 import qualified Data.Text as T
 import           Test.Framework
@@ -129,6 +132,8 @@ testCreateUserGood = testCase "createUser good params" assertGoodUser
       assertEqual "local host ip" Nothing (userLastLoginIp u)
       assertEqual "locked until" Nothing (userLockedOutUntil u)
       assertEqual "empty email" Nothing (userEmail u)
+      assertEqual "roles" [] (userRoles u)
+      assertEqual "meta" HM.empty (userMeta u)
 
 ------------------------------------------------------------------------------
 -- Create a user, modify it, persist it and load again, check fields ok.
@@ -150,16 +155,26 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
       assertEqual "locked until" Nothing (userLockedOutUntil u)
       assertEqual "local host ip" (Just "127.0.0.1") (userCurrentLoginIp u)
       assertEqual "no previous login" Nothing (userLastLoginIp u)
-      let saveHdl = with auth $ saveUser (u { userLogin = "bar" })
+      let saveHdl = with auth $ saveUser (u { userLogin = "bar"
+                                            , userRoles = roles
+                                            , userMeta  = meta })
       res <- evalHandler (ST.get "" M.empty) saveHdl appInit
       either (assertFailure . show) checkUpdatedUser res
 
+    roles = [Role $ BL.pack "Superman", Role $ BL.pack "Journalist"]
+    meta  = HM.fromList [ (T.pack "email-verified",
+                           A.toJSON $ T.pack "yes")
+                        , (T.pack "suppress-products",
+                           A.toJSON [T.pack "Kryptonite"]) ]
+          
     checkUpdatedUser (Left _) = assertBool "failed saveUser" False
     checkUpdatedUser (Right u) = do
       assertEqual "login rename ok?"  "bar" (userLogin u)
       assertEqual "login count"  1 (userLoginCount u)
       assertEqual "local host ip" (Just "127.0.0.1") (userCurrentLoginIp u)
       assertEqual "local host ip" Nothing (userLastLoginIp u)
+      assertEqual "account roles"  roles (userRoles u)
+      assertEqual "account meta data" meta (userMeta u)
       let loginHdl = with auth $ loginByUsername "bar" (ClearText "foo") True
       res <- evalHandler (ST.get "" M.empty) loginHdl appInit
       either (assertFailure . show) (assertBool "login as 'bar' ok?" . isRight) res
