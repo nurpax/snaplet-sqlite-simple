@@ -39,11 +39,14 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
+import qualified Data.Aeson as A
 import qualified Data.Configurator as C
-import qualified Data.HashMap.Lazy as HM
 import           Data.Maybe
+import qualified Data.HashMap.Lazy as HM
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.Encoding as LT
 import qualified Database.SQLite.Simple as S
 import           Database.SQLite.Simple.FromField
 import           Database.SQLite.Simple.FromRow
@@ -152,6 +155,10 @@ upgradeSchema conn pam fromVersion = do
       S.execute_ conn (addColumnQ (colResetToken pam))
       S.execute_ conn (addColumnQ (colResetRequestedAt pam))
 
+    upgrade 2 = do
+      S.execute_ conn (addColumnQ (colRoles pam))
+      S.execute_ conn (addColumnQ (colMeta pam))
+
     upgrade _ = error "unknown version"
 
     addColumnQ (c,t) =
@@ -167,6 +174,7 @@ createTableIfMissing SqliteAuthManager{..} = do
       unless authTblExists $ createInitialSchema conn pamTable
       upgradeSchema conn pamTable 0
       upgradeSchema conn pamTable 1
+      upgradeSchema conn pamTable 2
 
 
 buildUid :: Int -> UserId
@@ -199,8 +207,8 @@ instance FromRow AuthUser where
         <*> _userUpdatedAt
         <*> _userResetToken
         <*> _userResetRequestedAt
-        <*> _userRoles
-        <*> _userMeta
+        <*> decodeRoles
+        <*> decodeMeta
       where
         !_userId               = field
         !_userLogin            = field
@@ -220,8 +228,16 @@ instance FromRow AuthUser where
         !_userUpdatedAt        = field
         !_userResetToken       = field
         !_userResetRequestedAt = field
-        !_userRoles            = pure []
-        !_userMeta             = pure HM.empty
+        !_userRoles            = field :: RowParser (Maybe LT.Text)
+        !_userMeta             = field :: RowParser (Maybe LT.Text)
+
+        decodeRoles = do
+          roles <- fmap (fmap (maybeToList . A.decode' . LT.encodeUtf8)) _userRoles
+          return $ fromMaybe [] roles
+
+        decodeMeta = do
+          meta <- fmap (fmap (fromMaybe HM.empty . A.decode' . LT.encodeUtf8)) _userMeta
+          return $ fromMaybe HM.empty meta
 
 
 querySingle :: (ToRow q, FromRow a)
@@ -262,6 +278,8 @@ data AuthTable
   ,  colUpdatedAt        :: (Text, Text)
   ,  colResetToken       :: (Text, Text)
   ,  colResetRequestedAt :: (Text, Text)
+  ,  colRoles            :: (Text, Text)
+  ,  colMeta             :: (Text, Text)
   }
 
 
@@ -288,6 +306,8 @@ defAuthTable
   ,  colUpdatedAt        = ("updated_at", "timestamp")
   ,  colResetToken       = ("reset_token", "text")
   ,  colResetRequestedAt = ("reset_requested_at", "timestamp")
+  ,  colRoles            = ("roles_json", "text")
+  ,  colMeta             = ("meta_json", "text")
   }
 
 -- | List of deconstructors so it's easier to extract column names from an
@@ -312,7 +332,16 @@ colDef =
   , (colUpdatedAt       , S.toField . userUpdatedAt)
   , (colResetToken      , S.toField . userResetToken)
   , (colResetRequestedAt, S.toField . userResetRequestedAt)
+  , (colRoles           , S.toField . encodeOrNull . userRoles)
+  , (colMeta            , S.toField . encodeOrNullHM . userMeta)
   ]
+  where
+    encodeOrNull [] = Nothing
+    encodeOrNull x  = Just . LT.decodeUtf8 . A.encode $ x
+
+    encodeOrNullHM hm | HM.null hm = Nothing
+                      | otherwise  = Just . LT.decodeUtf8 . A.encode $ hm
+
 
 colNames :: AuthTable -> T.Text
 colNames pam =
@@ -341,6 +370,7 @@ saveQuery at u@AuthUser{..} = maybe insertQuery updateQuery userId
                   , " = ?"
                   ]
         , params ++ [S.toField $ unUid uid])
+    -- The list of column names
     cols = map (fst . ($at) . fst) $ tail colDef
     vals = map (const "?") cols
     params = map (($u) . snd) $ tail colDef
