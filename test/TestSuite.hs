@@ -23,6 +23,6 @@ main =
       defaultMain tests `finally` (return ())
 
     tests =
-      [ mutuallyExclusive $ testGroup "with db migration" [Tests.testsDbInit]
-      , mutuallyExclusive $ testGroup "from empty db" [Tests.tests]
+      [ mutuallyExclusive $ testGroup "from empty db" [Tests.tests]
+      , mutuallyExclusive $ testGroup "with db migration" [Tests.testsDbInit]
       ]

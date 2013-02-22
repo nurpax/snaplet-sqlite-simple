@@ -98,7 +98,8 @@ test-suite test
     test-framework-hunit       >= 0.2.7    && < 0.4,
     text                       >= 0.11     && < 0.12,
     time                       >= 1.1,
-    transformers               >= 0.2
+    transformers               >= 0.2,
+    unordered-containers       >= 0.2     && < 0.3
 
   default-extensions:
     FlexibleInstances
