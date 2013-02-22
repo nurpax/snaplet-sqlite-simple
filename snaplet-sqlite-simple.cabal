@@ -78,6 +78,7 @@ test-suite test
                   , SafeCWD
 
   build-depends:
+    aeson                      >= 0.6     && < 0.7,
     HUnit                      >= 1.2      && < 2,
     MonadCatchIO-transformers  >= 0.2      && < 0.4,
     base                       >= 4        && < 5,
