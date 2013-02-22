@@ -42,8 +42,8 @@ import           Control.Concurrent
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Configurator as C
-import           Data.Maybe
 import qualified Data.HashMap.Lazy as HM
+import           Data.Maybe
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Database.SQLite.Simple as S
