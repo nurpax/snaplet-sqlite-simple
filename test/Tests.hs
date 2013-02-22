@@ -6,6 +6,9 @@ module Tests
 
 
 ------------------------------------------------------------------------------
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Char8 as BL
+import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 import qualified Data.Text as T
 import           Test.Framework
@@ -44,6 +47,7 @@ testsDbInit = mutuallyExclusive $ testGroup "Snap.Snaplet.SqliteSimple"
       -- Create empty db, add user in old schema, then access it
     , testInitDbSchema0WithUser
     , testUpdateUser
+    , testDestroyUser
     ]
 
 isRight :: Either a b -> Bool
@@ -107,6 +111,25 @@ testInitDbSchema0WithUser = testCase "init + add foo user directly" $ do
   (_, _handler, _doCleanup) <- runSnaplet Nothing appInit
   assertBool "init ok" True
 
+-- | Why is this not in HUnit?
+assertFalse :: String -> Bool -> Assertion
+assertFalse s c = assertBool s (not c)
+
+testDestroyUser :: Test
+testDestroyUser = testCase "destroyUser works" assertDestroyUser
+  where
+    assertDestroyUser :: Assertion
+    assertDestroyUser = do
+      let hdl = with auth $ do
+            user <- createUser "destroy" "destroy"
+            -- This works
+            either (const $ return ()) destroyUser user
+            -- This has no effect when run
+            -- return $ fmap destroyUser user
+            usernameExists "destroy"
+      res <- evalHandler (ST.get "" M.empty) hdl appInit
+      either (assertFailure . show)
+        (assertFalse "destroyUser failed: User still there.") res
 
 ------------------------------------------------------------------------------
 testCreateUserGood :: Test
@@ -129,6 +152,8 @@ testCreateUserGood = testCase "createUser good params" assertGoodUser
       assertEqual "local host ip" Nothing (userLastLoginIp u)
       assertEqual "locked until" Nothing (userLockedOutUntil u)
       assertEqual "empty email" Nothing (userEmail u)
+      assertEqual "roles" [] (userRoles u)
+      assertEqual "meta" HM.empty (userMeta u)
 
 ------------------------------------------------------------------------------
 -- Create a user, modify it, persist it and load again, check fields ok.
@@ -150,16 +175,26 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
       assertEqual "locked until" Nothing (userLockedOutUntil u)
       assertEqual "local host ip" (Just "127.0.0.1") (userCurrentLoginIp u)
       assertEqual "no previous login" Nothing (userLastLoginIp u)
-      let saveHdl = with auth $ saveUser (u { userLogin = "bar" })
+      let saveHdl = with auth $ saveUser (u { userLogin = "bar"
+                                            , userRoles = roles
+                                            , userMeta  = meta })
       res <- evalHandler (ST.get "" M.empty) saveHdl appInit
       either (assertFailure . show) checkUpdatedUser res
 
+    roles = [Role $ BL.pack "Superman", Role $ BL.pack "Journalist"]
+    meta  = HM.fromList [ (T.pack "email-verified",
+                           A.toJSON $ T.pack "yes")
+                        , (T.pack "suppress-products",
+                           A.toJSON [T.pack "Kryptonite"]) ]
+          
     checkUpdatedUser (Left _) = assertBool "failed saveUser" False
     checkUpdatedUser (Right u) = do
       assertEqual "login rename ok?"  "bar" (userLogin u)
       assertEqual "login count"  1 (userLoginCount u)
       assertEqual "local host ip" (Just "127.0.0.1") (userCurrentLoginIp u)
       assertEqual "local host ip" Nothing (userLastLoginIp u)
+      assertEqual "account roles"  roles (userRoles u)
+      assertEqual "account meta data" meta (userMeta u)
       let loginHdl = with auth $ loginByUsername "bar" (ClearText "foo") True
       res <- evalHandler (ST.get "" M.empty) loginHdl appInit
       either (assertFailure . show) (assertBool "login as 'bar' ok?" . isRight) res
