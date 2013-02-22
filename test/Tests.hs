@@ -6,6 +6,7 @@ module Tests
 
 
 ------------------------------------------------------------------------------
+import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 import qualified Data.Text as T
 import           Test.Framework
@@ -44,6 +45,7 @@ testsDbInit = mutuallyExclusive $ testGroup "Snap.Snaplet.SqliteSimple"
       -- Create empty db, add user in old schema, then access it
     , testInitDbSchema0WithUser
     , testUpdateUser
+    , testDestroyUser
     ]
 
 isRight :: Either a b -> Bool
@@ -107,6 +109,25 @@ testInitDbSchema0WithUser = testCase "init + add foo user directly" $ do
   (_, _handler, _doCleanup) <- runSnaplet Nothing appInit
   assertBool "init ok" True
 
+-- | Why is this not in HUnit?
+assertFalse :: String -> Bool -> Assertion
+assertFalse s c = assertBool s (not c)
+
+testDestroyUser :: Test
+testDestroyUser = testCase "destroyUser works" assertDestroyUser
+  where
+    assertDestroyUser :: Assertion
+    assertDestroyUser = do
+      let hdl = with auth $ do
+            user <- createUser "destroy" "destroy"
+            -- This works
+            either (const $ return ()) destroyUser user
+            -- This has no effect when run
+            -- return $ fmap destroyUser user
+            usernameExists "destroy"
+      res <- evalHandler (ST.get "" M.empty) hdl appInit
+      either (assertFailure . show)
+        (assertFalse "destroyUser failed: User still there.") res
 
 ------------------------------------------------------------------------------
 testCreateUserGood :: Test
@@ -129,6 +150,8 @@ testCreateUserGood = testCase "createUser good params" assertGoodUser
       assertEqual "local host ip" Nothing (userLastLoginIp u)
       assertEqual "locked until" Nothing (userLockedOutUntil u)
       assertEqual "empty email" Nothing (userEmail u)
+      assertEqual "roles" [] (userRoles u)
+      assertEqual "meta" HM.empty (userMeta u)
 
 ------------------------------------------------------------------------------
 -- Create a user, modify it, persist it and load again, check fields ok.
