@@ -40,7 +40,8 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
 ------------------------------------------------------------------------------
 import           Control.Concurrent
 import qualified Data.Aeson as A
-import qualified Data.ByteString.Lazy          as BL
+import qualified Data.ByteString as B (ByteString)
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Configurator as C
 import qualified Data.HashMap.Lazy as HM
 import           Data.Maybe
@@ -206,9 +207,13 @@ instance FromRow AuthUser where
         <*> _userUpdatedAt
         <*> _userResetToken
         <*> _userResetRequestedAt
-        <*> fmap ((fromMaybe []) . A.decode' . BL.fromStrict) _userRoles
-        <*> fmap ((fromMaybe HM.empty) . A.decode' . BL.fromStrict) _userMeta
+        <*> fmap ((fromMaybe []) . A.decode' . tmpFromStrict) _userRoles
+        <*> fmap ((fromMaybe HM.empty) . A.decode' . tmpFromStrict) _userMeta
       where
+        -- TODO: Remove this function once Haskell Platform is
+        -- upgraded.  It exists in ByteString.Lazy.fromStrict
+        tmpFromStrict :: B.ByteString -> BL.ByteString
+        tmpFromStrict bs = BL.fromChunks [bs]
         !_userId               = field
         !_userLogin            = field
         !_userEmail            = field
