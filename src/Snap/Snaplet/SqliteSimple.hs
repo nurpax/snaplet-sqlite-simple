@@ -95,6 +95,7 @@ import           Control.Monad.Trans.Writer
 import qualified Data.Configurator as C
 import           Data.List
 import           Data.Maybe
+import qualified Data.Text as T
 import           Database.SQLite.Simple.ToRow
 import           Database.SQLite.Simple.FromRow
 import qualified Database.SQLite.Simple as S
@@ -164,13 +165,17 @@ sqliteInit = makeSnaplet "sqlite-simple" description datadir $ do
         db <- logErr "Must specify db filename" $ C.lookup config "db"
         return $ db
     let ci = fromMaybe (error $ intercalate "\n" errs) mci
-
-    conn <- liftIO $ (S.open ci >>= newMVar)
+    tracing <- liftIO $ C.lookupDefault False config "enableSqlTracing"
+    conn <- liftIO $ (S.open ci >>= setTracing tracing >>= newMVar)
     return $ Sqlite conn
   where
     description = "Sqlite abstraction"
+
     datadir = Just $ liftM (++"/resources/db") getDataDir
 
+    setTracing tracing conn = do
+      when tracing (S.setTrace conn (Just (putStrLn . T.unpack)))
+      return conn
 
 ------------------------------------------------------------------------------
 -- | Convenience function for executing a function that needs a database
