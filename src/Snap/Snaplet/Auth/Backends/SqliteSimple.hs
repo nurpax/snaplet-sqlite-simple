@@ -85,7 +85,7 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
                                       sqliteConn $ db ^# snapletValue
     liftIO $ createTableIfMissing manager
     rng <- liftIO mkRNG
-    return $ AuthManager
+    return AuthManager
       { backend = manager
       , session = sess
       , activeUser = Nothing
@@ -169,7 +169,7 @@ upgradeSchema conn pam fromVersion = do
 ------------------------------------------------------------------------------
 -- | Create the user table if it doesn't exist.
 createTableIfMissing :: SqliteAuthManager -> IO ()
-createTableIfMissing SqliteAuthManager{..} = do
+createTableIfMissing SqliteAuthManager{..} =
     withMVar pamConnPool $ \conn -> do
       authTblExists <- tableExists conn $ tblName pamTable
       unless authTblExists $ createInitialSchema conn pamTable

@@ -161,12 +161,11 @@ logErr err m = do
 sqliteInit :: SnapletInit b Sqlite
 sqliteInit = makeSnaplet "sqlite-simple" description datadir $ do
     config <- getSnapletUserConfig
-    (mci,errs) <- runWriterT $ do
-        db <- logErr "Must specify db filename" $ C.lookup config "db"
-        return $ db
+    (mci,errs) <- runWriterT $
+        logErr "Must specify db filename" $ C.lookup config "db"
     let ci = fromMaybe (error $ intercalate "\n" errs) mci
     tracing <- liftIO $ C.lookupDefault False config "enableSqlTracing"
-    conn <- liftIO $ (S.open ci >>= setTracing tracing >>= newMVar)
+    conn <- liftIO (S.open ci >>= setTracing tracing >>= newMVar)
     return $ Sqlite conn
   where
     description = "Sqlite abstraction"
@@ -207,7 +206,7 @@ query q params = withSqlite (\c -> S.query c q params)
 --
 -- See also 'withSqlite' for notes on concurrent access.
 query_ :: (HasSqlite m, FromRow r) => S.Query -> m [r]
-query_ q = withSqlite (\c -> S.query_ c q)
+query_ q = withSqlite (`S.query_` q)
 
 
 ------------------------------------------------------------------------------
@@ -225,4 +224,4 @@ execute template qs = withSqlite (\c -> S.execute c template qs)
 -- See also 'withSqlite' for notes on concurrent access.
 execute_ :: (HasSqlite m, MonadCatchIO m)
          => S.Query -> m ()
-execute_ template = withSqlite (\c -> S.execute_ c template)
+execute_ template = withSqlite (`S.execute_` template)
