@@ -1,5 +1,5 @@
 name:           snaplet-sqlite-simple
-version:        0.4.3
+version:        0.4.4
 synopsis:       sqlite-simple snaplet for the Snap Framework
 description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
@@ -56,7 +56,7 @@ Library
     mtl                        >= 2       && < 3,
     sqlite-simple              >= 0.4.1   && < 1.0,
     direct-sqlite              >= 2.3.3   && < 2.4,
-    snap                       >= 0.10    && < 0.12,
+    snap                       >= 0.10    && < 0.13,
     text                       >= 0.11    && < 0.12,
     transformers               >= 0.2     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3
