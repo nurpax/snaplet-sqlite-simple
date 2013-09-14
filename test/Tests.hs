@@ -118,7 +118,7 @@ testCreateUserGood = testCase "createUser good params" assertGoodUser
     assertGoodUser :: Assertion
     assertGoodUser = do
       let hdl = with auth $ createUser "foo" "foo"
-      res <- evalHandler (ST.get "" M.empty) hdl appInit
+      res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
       either (assertFailure . show) checkUserFields res
 
     checkUserFields (Left _) =
@@ -145,7 +145,7 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
     assertGoodUser :: Assertion
     assertGoodUser = do
       let loginHdl = with auth $ loginByUsername "foo" (ClearText "foo") True
-      res <- evalHandler (ST.get "" M.empty) loginHdl appInit
+      res <- evalHandler Nothing (ST.get "" M.empty) loginHdl appInit
       either (assertFailure . show) checkLoggedInUser res
 
     checkLoggedInUser (Left _) = assertBool "failed login" False
@@ -158,7 +158,7 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
       let saveHdl = with auth $ saveUser (u { userLogin = "bar"
                                             , userRoles = roles
                                             , userMeta  = meta })
-      res <- evalHandler (ST.get "" M.empty) saveHdl appInit
+      res <- evalHandler Nothing (ST.get "" M.empty) saveHdl appInit
       either (assertFailure . show) checkUpdatedUser res
 
     roles = [Role $ BL.pack "Superman", Role $ BL.pack "Journalist"]
@@ -176,5 +176,5 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
       assertEqual "account roles"  roles (userRoles u)
       assertEqual "account meta data" meta (userMeta u)
       let loginHdl = with auth $ loginByUsername "bar" (ClearText "foo") True
-      res <- evalHandler (ST.get "" M.empty) loginHdl appInit
+      res <- evalHandler Nothing (ST.get "" M.empty) loginHdl appInit
       either (assertFailure . show) (assertBool "login as 'bar' ok?" . isRight) res
