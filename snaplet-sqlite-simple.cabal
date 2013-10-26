@@ -56,7 +56,7 @@ Library
     mtl                        >= 2       && < 3,
     sqlite-simple              >= 0.4.1   && < 1.0,
     direct-sqlite              >= 2.3.3   && < 2.4,
-    snap                       >= 0.10    && < 0.14,
+    snap                       >= 0.13    && < 0.14,
     text                       >= 0.11    && < 0.12,
     transformers               >= 0.2     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3
