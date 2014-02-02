@@ -46,6 +46,7 @@ import qualified Data.HashMap.Lazy as HM
 import           Data.Maybe
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
 import qualified Database.SQLite.Simple as S
@@ -241,9 +242,13 @@ instance FromRow AuthUser where
           meta <- fmap (fmap (fromMaybe HM.empty . A.decode' . LT.encodeUtf8)) _userMeta
           return $ fromMaybe HM.empty meta
 
+        -- NOTE I think the T/LT.encudeUtf8 will break if the Roles
+        -- list contains strings that are not valid UTF-8.  It's
+        -- probably never the case, though.  In my defense, this is a
+        -- rarely used feature, and somewhat deprecated in Snap.
         textDecodeBS :: Maybe LT.Text -> Maybe [ByteString]
         textDecodeBS Nothing  = Nothing
-        textDecodeBS (Just t) = A.decode' . LT.encodeUtf8 $ t
+        textDecodeBS (Just t) = fmap (map T.encodeUtf8) . A.decode' . LT.encodeUtf8 $ t
 
 
 querySingle :: (ToRow q, FromRow a)

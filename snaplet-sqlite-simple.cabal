@@ -47,7 +47,7 @@ Library
     Paths_snaplet_sqlite_simple
 
   build-depends:
-    aeson                      >= 0.6     && < 0.7,
+    aeson                      >= 0.6     && < 0.8,
     base                       >= 4       && < 5,
     bytestring                 >= 0.9.1   && < 0.11,
     clientsession              >= 0.8     && < 0.10,
@@ -57,7 +57,7 @@ Library
     sqlite-simple              >= 0.4.1   && < 1.0,
     direct-sqlite              >= 2.3.3   && < 2.4,
     snap                       >= 0.13    && < 0.14,
-    text                       >= 0.11    && < 0.12,
+    text                       >= 0.11    && < 1.2,
     transformers               >= 0.3     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3
 
@@ -77,7 +77,7 @@ test-suite test
                   , SafeCWD
 
   build-depends:
-    aeson                      >= 0.6      && < 0.7,
+    aeson,
     HUnit                      >= 1.2      && < 2,
     MonadCatchIO-transformers  >= 0.2      && < 0.4,
     base                       >= 4        && < 5,
@@ -96,7 +96,7 @@ test-suite test
     stm                        >= 2.4,
     test-framework             >= 0.6      && < 0.9,
     test-framework-hunit       >= 0.2.7    && < 0.4,
-    text                       >= 0.11     && < 0.12,
+    text                       >= 0.11     && < 1.2,
     time                       >= 1.1,
     transformers               >= 0.3     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3
