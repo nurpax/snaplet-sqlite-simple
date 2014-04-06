@@ -17,3 +17,5 @@ For sqlite-simple usage examples, visit the [sqlite-simple homepage](http://gith
 This snaplet is based on the [snaplet-postgresql-simple](http://github.com/mightybyte/snaplet-postgresql-simple).
 
 [![Build Status (master)](https://secure.travis-ci.org/nurpax/snaplet-sqlite-simple.png?branch=master)](https://travis-ci.org/nurpax/snaplet-sqlite-simple)
+
+[![Coverage Status](http://coveralls.io/repos/nurpax/snaplet-sqlite-simple/badge.png?branch=master)](http://coveralls.io/r/nurpax/snaplet-sqlite-simple?branch=master)
