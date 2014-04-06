@@ -6,5 +6,6 @@ script:
   - run-cabal-test
   - cd example
   - cabal install
+  - cd ..
 after_script:
   - hpc-coveralls test
