@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Tests
   ( tests
@@ -21,6 +21,7 @@ import           Database.SQLite.Simple
 import           App
 import           Snap.Snaplet
 import           Snap.Snaplet.Auth
+import qualified Snap.Snaplet.SqliteSimple as SQ
 import qualified Snap.Test as ST
 import           Snap.Snaplet.Test
 
@@ -47,11 +48,21 @@ testsDbInit = mutuallyExclusive $ testGroup "Snap.Snaplet.SqliteSimple"
       -- Create empty db, add user in old schema, then access it
     , testInitDbSchema0WithUser
     , testUpdateUser
+      -- Create empty db, add user in old schema, then access it, and delete it
+    , testInitDbSchema0
+    , testCreateUserGood
+    , testDeleteUser
+      -- Create empty db, perform some basic queries
+    , testInitDbSchema0
+    , testQueries
     ]
 
 isRight :: Either a b -> Bool
 isRight (Left _) = False
 isRight (Right _) = True
+
+isLeft :: Either a b -> Bool
+isLeft = not . isRight
 
 dropTables :: Connection -> IO ()
 dropTables conn = do
@@ -178,3 +189,46 @@ testUpdateUser = testCase "createUser + update good params" assertGoodUser
       let loginHdl = with auth $ loginByUsername "bar" (ClearText "foo") True
       res <- evalHandler Nothing (ST.get "" M.empty) loginHdl appInit
       either (assertFailure . show) (assertBool "login as 'bar' ok?" . isRight) res
+
+------------------------------------------------------------------------------
+-- Test that deleting a user works.
+
+testDeleteUser :: Test
+testDeleteUser = testCase "delete a user" assertGoodUser
+  where
+    loginHdl = with auth $ loginByUsername "foo" (ClearText "foo") True
+
+    assertGoodUser :: Assertion
+    assertGoodUser = do
+      res <- evalHandler Nothing (ST.get "" M.empty) loginHdl appInit
+      either (assertFailure . show) delUser res
+
+    delUser (Left _) = assertBool "failed login" False
+    delUser (Right u) = do
+      let delHdl = with auth $ destroyUser u
+      Right res <- evalHandler Nothing (ST.get "" M.empty) delHdl appInit
+      res <- evalHandler Nothing (ST.get "" M.empty) loginHdl appInit
+      either (assertFailure . show) (assertBool "login as 'foo' should fail now" . isLeft) res
+
+------------------------------------------------------------------------------
+-- Query tests
+
+testQueries :: Test
+testQueries = testCase "basic queries" runTest
+  where
+    queries = do
+      SQ.execute_ "CREATE TABLE foo (id INTEGER PRIMARY KEY, t TEXT)"
+      SQ.execute "INSERT INTO foo (t) VALUES (?)" (Only ("bar" :: String))
+      [(a :: Int,b :: String)] <- SQ.query_ "SELECT id,t FROM foo"
+      [Only (s :: String)] <- SQ.query "SELECT t FROM foo WHERE id = ?" (Only (1 :: Int))
+      withTop db . SQ.withSqlite $ \conn -> do
+        a @=? 1
+        b @=? "bar"
+        s @=? "bar"
+        [Only (v :: Int)] <- query_ conn "SELECT 1+1"
+        v @=? 2
+
+    runTest :: Assertion
+    runTest = do
+      r <- evalHandler Nothing (ST.get "" M.empty) queries appInit
+      return ()
