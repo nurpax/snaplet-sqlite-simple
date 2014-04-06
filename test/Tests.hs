@@ -6,16 +6,18 @@ module Tests
 
 
 ------------------------------------------------------------------------------
+import           Control.Error
+import           Control.Monad.State as S
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Char8 as BL
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
+import           Data.Maybe
 import qualified Data.Text as T
+import           Database.SQLite.Simple
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.HUnit hiding (Test, path)
-
-import           Database.SQLite.Simple
 
 ------------------------------------------------------------------------------
 import           App
@@ -24,7 +26,6 @@ import           Snap.Snaplet.Auth
 import qualified Snap.Snaplet.SqliteSimple as SQ
 import qualified Snap.Test as ST
 import           Snap.Snaplet.Test
-
 
 ------------------------------------------------------------------------------
 tests :: Test
@@ -55,14 +56,15 @@ testsDbInit = mutuallyExclusive $ testGroup "Snap.Snaplet.SqliteSimple"
       -- Create empty db, perform some basic queries
     , testInitDbSchema0
     , testQueries
+      -- Login tests, these use some otherwise uncovered DB backend
+      -- functions.
+    , testInitDbSchema0WithUser
+    , testLoginByRememberTokenKO
+    , testLoginByRememberTokenOK
+    , testLogoutOK
+    , testCurrentUserKO
+    , testCurrentUserOK
     ]
-
-isRight :: Either a b -> Bool
-isRight (Left _) = False
-isRight (Right _) = True
-
-isLeft :: Either a b -> Bool
-isLeft = not . isRight
 
 dropTables :: Connection -> IO ()
 dropTables conn = do
@@ -232,3 +234,84 @@ testQueries = testCase "basic queries" runTest
     runTest = do
       r <- evalHandler Nothing (ST.get "" M.empty) queries appInit
       return ()
+
+------------------------------------------------------------------------------
+testLoginByRememberTokenKO :: Test
+testLoginByRememberTokenKO = testCase "loginByRememberToken no token" assertion
+  where
+    assertion :: Assertion
+    assertion = do
+        let hdl = with auth loginByRememberToken
+        res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
+        either (assertFailure . show) (assertBool failMsg . isLeft) res
+
+    failMsg = "loginByRememberToken: Expected to fail for the " ++
+              "absence of a token, but didn't."
+
+
+------------------------------------------------------------------------------
+testLoginByRememberTokenOK :: Test
+testLoginByRememberTokenOK = testCase "loginByRememberToken token" assertion
+  where
+    assertion :: Assertion
+    assertion = do
+        res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
+        case res of
+          (Left e) -> assertFailure $ show e
+          (Right res') -> assertBool failMsg $ isRight res'
+
+    hdl :: Handler App App (Either AuthFailure AuthUser)
+    hdl = with auth $ do
+        res <- loginByUsername "foo" (ClearText "foo") True
+        either (\e -> return (Left e)) (\_ -> loginByRememberToken) res
+
+    failMsg = "loginByRememberToken: Expected to succeed but didn't."
+
+------------------------------------------------------------------------------
+assertLogout :: Handler App App (Maybe AuthUser) -> String -> Assertion
+assertLogout hdl failMsg = do
+    res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
+    either (assertFailure . show) (assertBool failMsg . isNothing) res
+
+testLogoutOK :: Test
+testLogoutOK = testCase "logout user logged in." $ assertLogout hdl failMsg
+  where
+    hdl :: Handler App App (Maybe AuthUser)
+    hdl = with auth $ do
+        loginByUsername "foo" (ClearText "foo") True
+        logout
+        mgr <- get
+        return (activeUser mgr)
+
+    failMsg = "logout: Expected to get Nothing as the active user, " ++
+              " but didn't."
+
+------------------------------------------------------------------------------
+testCurrentUserKO :: Test
+testCurrentUserKO = testCase "currentUser unsuccesful call" assertion
+  where
+    assertion :: Assertion
+    assertion = do
+        let hdl = with auth currentUser
+        res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
+        either (assertFailure . show) (assertBool failMsg . isNothing) res
+
+    failMsg = "currentUser: Expected Nothing as the current user, " ++
+              " but didn't."
+
+------------------------------------------------------------------------------
+testCurrentUserOK :: Test
+testCurrentUserOK = testCase "successful currentUser call" assertion
+  where
+    assertion :: Assertion
+    assertion = do
+        res <- evalHandler Nothing (ST.get "" M.empty) hdl appInit
+        either (assertFailure . show) (assertBool failMsg . isJust) res
+
+    hdl :: Handler App App (Maybe AuthUser)
+    hdl = with auth $ do
+        res <- loginByUsername "foo" (ClearText "foo") True
+        either (\_ -> return Nothing) (\_ -> currentUser) res
+
+    failMsg = "currentUser: Expected to get the current user, " ++
+              " but didn't."
