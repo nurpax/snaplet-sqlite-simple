@@ -404,10 +404,10 @@ instance IAuthBackend SqliteAuthManager where
                      , fst (colLogin pamTable)
                      , " = ?"
                      ]
-            res <- S.query conn q2 [userLogin]
-            case res of
-              [savedUser] -> return $ Right savedUser
-              _           -> return . Left $ AuthError "snaplet-sqlite-simple: Failed user save"
+            -- TODO S.query may throw an exception, ideally we would
+            -- catch it and turn it into an AuthError.
+            [savedUser] <- S.query conn q2 [userLogin]
+            return $ Right savedUser
 
     lookupByUserId SqliteAuthManager{..} uid = do
         let q = Query $ T.concat
