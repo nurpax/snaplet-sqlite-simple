@@ -52,13 +52,15 @@ Library
     bytestring                 >= 0.9.1   && < 0.11,
     clientsession              >= 0.8     && < 0.10,
     configurator               >= 0.2     && < 0.3,
-    MonadCatchIO-transformers  >= 0.3     && < 0.4,
+    lifted-base                >= 0.2     && < 0.3,
+    monad-control              >= 0.3     && < 0.4,
     mtl                        >= 2       && < 3,
     sqlite-simple              >= 0.4.1   && < 1.0,
     direct-sqlite              >= 2.3.3   && < 2.4,
-    snap                       >= 0.13    && < 0.14,
+    snap                       >= 1.0     && < 1.1,
     text                       >= 0.11    && < 1.2,
     transformers               >= 0.3     && < 0.4,
+    transformers-base          >= 0.4     && < 0.5,
     unordered-containers       >= 0.2     && < 0.3
 
 
