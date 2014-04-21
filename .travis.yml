@@ -8,4 +8,4 @@ script:
   - cabal install
   - cd ..
 after_script:
-  - hpc-coveralls test
+  - hpc-coveralls --exclude-dir=test test
