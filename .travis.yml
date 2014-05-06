@@ -1,5 +1,7 @@
 language: haskell
-before_install:
+install:
+  - cabal update
+  - cabal install --only-dep --enable-tests
   - cabal install hpc-coveralls
 script:
   - cabal configure --enable-tests --enable-library-coverage && cabal build
