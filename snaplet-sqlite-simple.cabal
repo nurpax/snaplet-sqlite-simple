@@ -1,5 +1,5 @@
 name:           snaplet-sqlite-simple
-version:        0.4.8
+version:        0.4.8.1
 synopsis:       sqlite-simple snaplet for the Snap Framework
 description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
@@ -47,7 +47,7 @@ Library
     Paths_snaplet_sqlite_simple
 
   build-depends:
-    aeson                      >= 0.6     && < 0.8,
+    aeson                      >= 0.6     && < 0.9,
     base                       >= 4       && < 5,
     bytestring                 >= 0.9.1   && < 0.11,
     clientsession              >= 0.8     && < 0.10,
@@ -79,16 +79,16 @@ test-suite test
   build-depends:
     aeson,
     HUnit                      >= 1.2      && < 2,
-    MonadCatchIO-transformers  >= 0.2      && < 0.4,
-    base                       >= 4        && < 5,
-    bytestring                 >= 0.9      && < 0.11,
+    MonadCatchIO-transformers,
+    base,
+    bytestring,
     clientsession,
-    configurator               >= 0.1      && < 0.3,
+    configurator,
     containers                 >= 0.3,
     directory                  >= 1.0      && < 1.3,
     errors                     >= 1.3.1    && < 1.5,
     lens,
-    mtl                        >= 2,
+    mtl,
     SafeSemaphore,
     snap-core,
     snap,
@@ -97,7 +97,7 @@ test-suite test
     stm                        >= 2.4,
     test-framework             >= 0.6      && < 0.9,
     test-framework-hunit       >= 0.2.7    && < 0.4,
-    text                       >= 0.11     && < 1.2,
+    text,
     time                       >= 1.1,
     transformers,
     unordered-containers       >= 0.2     && < 0.3
