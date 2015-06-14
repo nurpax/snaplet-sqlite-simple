@@ -87,6 +87,7 @@ module Snap.Snaplet.SqliteSimple (
 import           Prelude hiding (catch)
 
 import           Control.Concurrent
+import           Control.Lens ((^#))
 import           Control.Monad.CatchIO hiding (Handler)
 import           Control.Monad.IO.Class
 import           Control.Monad.State

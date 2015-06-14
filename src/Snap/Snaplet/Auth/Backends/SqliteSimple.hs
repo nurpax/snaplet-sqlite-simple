@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 {-|
@@ -39,6 +40,9 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
+import           Control.Lens ((^#))
+import           Control.Monad
+import           Control.Monad.IO.Class
 import qualified Data.Aeson as A
 import           Data.ByteString (ByteString)
 import qualified Data.Configurator as C
