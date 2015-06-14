@@ -39,6 +39,7 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent
 import           Control.Lens ((^#))
 import           Control.Monad

@@ -10,6 +10,7 @@ module Application where
 
 ------------------------------------------------------------------------------
 import Control.Lens
+import Control.Monad.State
 import Snap
 import Snap.Snaplet.Heist
 import Snap.Snaplet.Auth
