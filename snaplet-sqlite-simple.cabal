@@ -1,5 +1,5 @@
 name:           snaplet-sqlite-simple
-version:        0.4.6
+version:        0.5
 synopsis:       sqlite-simple snaplet for the Snap Framework
 description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
@@ -47,26 +47,25 @@ Library
     Paths_snaplet_sqlite_simple
 
   build-depends:
-    aeson                      >= 0.6     && < 0.8,
     base                       >= 4       && < 5,
+    aeson                      >= 0.11.1.4,
     bytestring                 >= 0.9.1   && < 0.11,
     clientsession              >= 0.8     && < 0.10,
-    configurator               >= 0.2     && < 0.3,
+    configurator               >= 0.3,
     lifted-base                >= 0.2     && < 0.3,
-    monad-control              >= 0.3     && < 0.4,
+    monad-control              >= 1.0.1.0,
+    lens                                     < 4.14,
     mtl                        >= 2       && < 3,
     sqlite-simple              >= 0.4.1   && < 1.0,
     direct-sqlite              >= 2.3.3   && < 2.4,
     snap                       >= 1.0     && < 1.1,
-    text                       >= 0.11    && < 1.2,
-    transformers               >= 0.3     && < 0.4,
+    text                       >= 1.2,
+    transformers               >= 0.4,
     transformers-base          >= 0.4     && < 0.5,
     unordered-containers       >= 0.2     && < 0.3
 
-
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
                -fno-warn-orphans -fno-warn-unused-do-bind
-
 
 test-suite test
   default-language: Haskell2010
@@ -81,27 +80,27 @@ test-suite test
   build-depends:
     aeson,
     HUnit                      >= 1.2      && < 2,
-    MonadCatchIO-transformers  >= 0.2      && < 0.4,
+    exceptions                 >= 0.8,
     base                       >= 4        && < 5,
     bytestring                 >= 0.9      && < 0.11,
     clientsession,
-    configurator               >= 0.1      && < 0.3,
+    configurator               >= 0.3,
     containers                 >= 0.3,
     directory                  >= 1.0      && < 1.3,
-    errors                     >= 1.3.1    && < 1.5,
-    lens,
+    errors                     >= 2.1.2,
+    lens                                      < 4.14,
     mtl                        >= 2,
     snap-core,
-    snap,
+    snap                       >= 1.0      && < 1.1,
     snaplet-sqlite-simple,
     sqlite-simple,
     stm                        >= 2.4,
     test-framework             >= 0.6      && < 0.9,
     test-framework-hunit       >= 0.2.7    && < 0.4,
-    text                       >= 0.11     && < 1.2,
+    text                       >= 1.2,
     time                       >= 1.1,
-    transformers               >= 0.3     && < 0.4,
-    unordered-containers       >= 0.2     && < 0.3
+    transformers               >= 0.4,
+    unordered-containers       >= 0.2      && < 0.3
 
   default-extensions:
     FlexibleInstances
