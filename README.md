@@ -6,6 +6,8 @@ A Snap plugin (or snaplet) that makes it easy to use the SQLite database with th
 [sqlite-simple](http://github.com/nurpax/sqlite-simple) for actually talking
 to the SQLite database.
 
+## Examples
+
 Please see the [example project](https://github.com/nurpax/snaplet-sqlite-simple/tree/master/example)
 for an introduction on how to use this within Snap.  It implements a stand-alone application with a login
 screen that persists user information in a SQLite database and allows a logged in user to save comments.
