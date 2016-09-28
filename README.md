@@ -1,5 +1,9 @@
-Snaplet for sqlite-simple
+Snaplet for SQLite
 -------------------------
+
+[![Build Status (master)](https://secure.travis-ci.org/nurpax/snaplet-sqlite-simple.png?branch=master)](https://travis-ci.org/nurpax/snaplet-sqlite-simple)
+
+[![Coverage Status](http://coveralls.io/repos/nurpax/snaplet-sqlite-simple/badge.png?branch=master)](http://coveralls.io/r/nurpax/snaplet-sqlite-simple?branch=master)
 
 A Snap plugin (or snaplet) that makes it easy to use the SQLite database with the
 [Snap web framework](http://snapframework.com/).  This plugin uses
@@ -18,6 +22,7 @@ For sqlite-simple usage examples, visit the [sqlite-simple homepage](http://gith
 
 This snaplet is based on the [snaplet-postgresql-simple](http://github.com/mightybyte/snaplet-postgresql-simple).
 
-[![Build Status (master)](https://secure.travis-ci.org/nurpax/snaplet-sqlite-simple.png?branch=master)](https://travis-ci.org/nurpax/snaplet-sqlite-simple)
+## Maintainers
 
-[![Coverage Status](http://coveralls.io/repos/nurpax/snaplet-sqlite-simple/badge.png?branch=master)](http://coveralls.io/r/nurpax/snaplet-sqlite-simple?branch=master)
+[Janne Hellsten](https://github.com/nurpax) is the primary maintainer.
+[Sergey Bushnyak](https://github.com/sigrlami) is backup maintainer. Please get in touch with him if the primary maintainer cannot be reached.
