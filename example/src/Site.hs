@@ -1,14 +1,14 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 ------------------------------------------------------------------------------
 -- | This module is where all the routes and handlers are defined for your
 -- site. The 'app' function is the initializer that combines everything
 -- together and is exported by this module.
 module Site
-  ( app
-  ) where
+       ( app
+       ) where
 
-------------------------------------------------------------------------------
 import           Control.Concurrent
 import           Control.Applicative
 import           Control.Monad.Trans (liftIO, lift)
@@ -19,20 +19,26 @@ import           Data.ByteString (ByteString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Read as T
+import           Data.Map.Syntax
+import           Data.Monoid
+import           Snap
 import           Snap.Core
 import           Snap.Snaplet
 import           Snap.Snaplet.Auth
 import           Snap.Snaplet.Auth.Backends.SqliteSimple
 import           Snap.Snaplet.Heist
+import           Snap.Snaplet.Session
 import           Snap.Snaplet.Session.Backends.CookieSession
 import           Snap.Snaplet.SqliteSimple
 import           Snap.Util.FileServe
 import           Heist
 import qualified Heist.Interpreted as I
-------------------------------------------------------------------------------
+
 import           Application
 import qualified Db
 import           Util
+
+------------------------------------------------------------------------------
 
 type H = Handler App App
 
@@ -45,7 +51,7 @@ handleLogin :: Maybe T.Text -> Handler App (AuthManager App) ()
 handleLogin authError =
   heistLocal (I.bindSplices errs) $ render "login"
   where
-    errs = maybe noSplices splice authError
+    errs = maybe mempty splice authError
     splice err = "loginError" ## I.textSplice err
 
 -- | Handle login submit.  Either redirect to '/' on success or give
@@ -74,11 +80,11 @@ handleNewUser =
     renderNewUserForm (err :: Maybe AuthFailure) =
       heistLocal (I.bindSplices errs) $ render "new_user"
       where
-        errs = maybe noSplices splice err
+        errs = maybe mempty splice err
         splice e = "newUserError" ## I.textSplice . T.pack . show $ e
 
     login user =
-      logRunEitherT $
+      logRunExceptT $
         lift (with auth (forceLogin user) >> redirect "/")
 
 -- | Run actions with a logged in user or go back to the login screen
@@ -88,9 +94,9 @@ withLoggedInUser action =
   where
     go Nothing  =
       with auth $ handleLogin (Just "Must be logged in to view the main page")
-    go (Just u) = logRunEitherT $ do
+    go (Just u) = logRunExceptT $ do
       uid  <- tryJust "withLoggedInUser: missing uid" (userId u)
-      uid' <- hoistEither (reader T.decimal (unUid uid))
+      uid' <- liftEither $ (reader T.decimal (unUid uid))
       return $ action (Db.User uid' (userLogin u))
 
 handleCommentSubmit :: H ()
@@ -138,8 +144,7 @@ app = makeSnaplet "app" "An snaplet example application." Nothing $ do
     -- chance to get called.
     addRoutes routes
     h <- nestSnaplet "" heist $ heistInit "templates"
-    s <- nestSnaplet "sess" sess $
-           initCookieSessionManager "site_key.txt" "sess" (Just 3600)
+    s <- nestSnaplet "sess" sess $ initCookieSessionManager "site_key.txt" "sess" (Just "") (Just 3600)
 
     -- Initialize auth that's backed by an sqlite database
     d <- nestSnaplet "db" db sqliteInit

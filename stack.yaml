@@ -1,11 +1,15 @@
-resolver: lts-7.12
+resolver: lts-7.1
 
 packages:
 - '.'
-- example
+- location:
+    git: https://github.com/snapframework/snap-loader-static.git
+    commit: 75e8d0a8d725332098ea779a6e2995cc7b8e31fb  
+- example/
 
 extra-deps:
-  - map-syntax-0.2.0.1
+   - template-haskell-2.10.0.0   
+   - map-syntax-0.2.0.1
    - heist-1.0.0.0
    - snap-1.0.0.1
    - aeson-0.11.1.4

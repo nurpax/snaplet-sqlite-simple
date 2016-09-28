@@ -1,12 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 module Util (
     reader
   , logFail
-  , logRunEitherT
+  , logRunExceptT
+  , liftEither  
   ) where
 
-import           Control.Monad.Trans.Either
+import           Control.Monad.Except
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Read as T
@@ -14,6 +16,8 @@ import qualified Data.Text.Read as T
 import           Snap.Core
 import           Snap.Snaplet
 import           Application
+
+--------------------------------------------------------------------------------
 
 type H = Handler App App
 
@@ -31,6 +35,8 @@ reader p s =
 logFail :: Either String (H ()) -> H ()
 logFail = either (logError . T.encodeUtf8 . T.pack) id
 
+logRunExceptT :: ExceptT String H (H ()) -> H ()
+logRunExceptT e = runExceptT e >>= logFail
 
-logRunEitherT :: EitherT String H (H ()) -> H ()
-logRunEitherT e = runEitherT e >>= logFail
+liftEither :: (Monad m, MonadError a (Either a)) => Either a b -> ExceptT a m b
+liftEither = either throwError return
