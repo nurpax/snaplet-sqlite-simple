@@ -144,7 +144,7 @@ app = makeSnaplet "app" "An snaplet example application." Nothing $ do
     -- chance to get called.
     addRoutes routes
     h <- nestSnaplet "" heist $ heistInit "templates"
-    s <- nestSnaplet "sess" sess $ initCookieSessionManager "site_key.txt" "sess" (Just "") (Just 3600)
+    s <- nestSnaplet "sess" sess $ initCookieSessionManager "site_key.txt" "sess" Nothing (Just 3600)
 
     -- Initialize auth that's backed by an sqlite database
     d <- nestSnaplet "db" db sqliteInit

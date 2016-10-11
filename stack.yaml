@@ -1,10 +1,7 @@
-resolver: lts-7.1
+resolver: lts-7.3
 
 packages:
 - '.'
-- location:
-    git: https://github.com/snapframework/snap-loader-static.git
-    commit: 75e8d0a8d725332098ea779a6e2995cc7b8e31fb  
 - example/
 
 extra-deps:
@@ -12,6 +9,7 @@ extra-deps:
    - map-syntax-0.2.0.1
    - heist-1.0.0.0
    - snap-1.0.0.1
+   - snap-loader-static-1.0.0.0
    - aeson-0.11.1.4
    - base-orphans-0.5.4
    - clock-0.7.2
