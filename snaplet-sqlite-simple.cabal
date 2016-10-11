@@ -1,5 +1,5 @@
 name:           snaplet-sqlite-simple
-version:        0.5.0.0
+version:        1.0.0.0
 synopsis:       sqlite-simple snaplet for the Snap Framework
 description:    This snaplet provides support for using the SQLite
                 database with a Snap Framework application via the
@@ -20,6 +20,7 @@ license:        BSD3
 license-file:   LICENSE
 author:         Janne Hellsten, Doug Beardsley
 maintainer:     Janne Hellsten <jjhellst@gmail.com>
+          ,     Sergey Bushnyak <sergey.bushnyak@sigrlami.eu>  
 build-type:     Simple
 cabal-version:  >= 1.10
 homepage:       https://github.com/nurpax/snaplet-sqlite-simple
