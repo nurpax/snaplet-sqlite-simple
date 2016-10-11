@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 {-|
 
@@ -39,9 +39,8 @@ module Snap.Snaplet.Auth.Backends.SqliteSimple
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent
-import           Control.Lens ((^#))
+import           Control.Lens
 import           Control.Monad
 import           Control.Monad.IO.Class
 import qualified Data.Aeson as A

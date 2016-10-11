@@ -10,7 +10,7 @@ module Application where
 
 ------------------------------------------------------------------------------
 import Control.Lens
-import Control.Monad.State
+import Control.Monad.State (get)
 import Snap
 import Snap.Snaplet.Heist
 import Snap.Snaplet.Auth
@@ -20,9 +20,9 @@ import Snap.Snaplet.SqliteSimple
 ------------------------------------------------------------------------------
 data App = App
     { _heist :: Snaplet (Heist App)
-    , _sess :: Snaplet SessionManager
-    , _db :: Snaplet Sqlite
-    , _auth :: Snaplet (AuthManager App)
+    , _sess  :: Snaplet SessionManager
+    , _db    :: Snaplet Sqlite
+    , _auth  :: Snaplet (AuthManager App)
     }
 
 makeLenses ''App

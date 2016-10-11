@@ -87,8 +87,8 @@ module Snap.Snaplet.SqliteSimple (
 import           Prelude hiding (catch)
 
 import           Control.Concurrent
-import           Control.Lens ((^#))
-import           Control.Monad.CatchIO hiding (Handler)
+import           Control.Lens
+import           Control.Monad.Base
 import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader
@@ -120,7 +120,7 @@ data Sqlite = Sqlite
 -- the sqlite snaplet in your application, then don't provide this instance
 -- and leverage the default instance by using \"@with dbLens@\" in front of calls
 -- to snaplet-sqlite-simple functions.
-class (MonadCatchIO m) => HasSqlite m where
+class (MonadBase IO m) => HasSqlite m where
     getSqliteState :: m Sqlite
 
 
@@ -136,14 +136,14 @@ instance HasSqlite (Handler b Sqlite) where
 --
 -- > d <- nestSnaplet "db" db sqliteInit
 -- > count <- liftIO $ runReaderT (execute "INSERT ..." params) d
-instance (MonadCatchIO m) => HasSqlite (ReaderT (Snaplet Sqlite) m) where
+instance (MonadBase IO m) => HasSqlite (ReaderT (Snaplet Sqlite) m) where
     getSqliteState = asks (\sqlsnaplet -> sqlsnaplet ^# snapletValue)
 
 
 ------------------------------------------------------------------------------
 -- | A convenience instance to make it easier to use functions written for
 -- this snaplet in non-snaplet contexts.
-instance (MonadCatchIO m) => HasSqlite (ReaderT Sqlite m) where
+instance (MonadBase IO m) => HasSqlite (ReaderT Sqlite m) where
     getSqliteState = ask
 
 
@@ -191,7 +191,7 @@ withSqlite :: (HasSqlite m)
 withSqlite f = do
     s <- getSqliteState
     let conn = sqliteConn s
-    liftIO $ withMVar conn f
+    liftBase $ withMVar conn f
 
 ------------------------------------------------------------------------------
 -- | See 'S.query'
@@ -214,7 +214,7 @@ query_ q = withSqlite (`S.query_` q)
 -- |
 --
 -- See also 'withSqlite' for notes on concurrent access.
-execute :: (HasSqlite m, ToRow q, MonadCatchIO m)
+execute :: (HasSqlite m, ToRow q)
         => S.Query -> q -> m ()
 execute template qs = withSqlite (\c -> S.execute c template qs)
 
@@ -223,6 +223,6 @@ execute template qs = withSqlite (\c -> S.execute c template qs)
 -- |
 --
 -- See also 'withSqlite' for notes on concurrent access.
-execute_ :: (HasSqlite m, MonadCatchIO m)
+execute_ :: (HasSqlite m)
          => S.Query -> m ()
 execute_ template = withSqlite (`S.execute_` template)
