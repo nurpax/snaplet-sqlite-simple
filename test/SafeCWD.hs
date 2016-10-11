@@ -3,20 +3,20 @@ module SafeCWD
   , removeDirectoryRecursiveSafe
   ) where
 
-import Control.Concurrent.QSem
+import Control.Concurrent.SSem
 import Control.Exception
 import Control.Monad
 import System.Directory
 import System.IO.Unsafe
 
-sem :: QSem
-sem = unsafePerformIO $ newQSem 1
+sem :: SSem
+sem = unsafePerformIO $ new 1
 
 inDir :: Bool -> FilePath -> IO a -> IO a
 inDir startClean dir action = bracket before after (const action)
   where
     before = do
-        waitQSem sem
+        wait sem
         cwd <- getCurrentDirectory
         when startClean $ removeDirectoryRecursiveSafe dir
         createDirectoryIfMissing True dir
@@ -24,7 +24,7 @@ inDir startClean dir action = bracket before after (const action)
         return cwd
     after cwd = do
         setCurrentDirectory cwd
-        signalQSem sem
+        signal sem
 
 removeDirectoryRecursiveSafe :: String -> IO ()
 removeDirectoryRecursiveSafe p =

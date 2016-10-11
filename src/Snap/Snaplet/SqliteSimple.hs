@@ -85,6 +85,7 @@ module Snap.Snaplet.SqliteSimple (
   ) where
 
 import           Prelude hiding (catch)
+
 import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.Base

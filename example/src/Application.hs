@@ -33,6 +33,7 @@ instance HasHeist App where
 instance HasSqlite (Handler b App) where
     getSqliteState = with db get
 
+
 ------------------------------------------------------------------------------
 type AppHandler = Handler App App
 
