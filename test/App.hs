@@ -35,7 +35,7 @@ instance HasSqlite (Handler b App) where
 appInit :: SnapletInit App App
 appInit = makeSnaplet "app" "Test application" Nothing $ do
   s <- nestSnaplet "sess" sess $
-          initCookieSessionManager "site_key.txt" "sess" (Just 3600)
+          initCookieSessionManager "site_key.txt" "sess" Nothing (Just 3600)
 
   -- Initialize auth that's backed by an sqlite database
   d <- nestSnaplet "db" db sqliteInit

@@ -6,7 +6,6 @@ module Main where
 ------------------------------------------------------------------------------
 import           Control.Exception hiding (Handler)
 import           Control.Monad
-import           Prelude hiding (catch)
 import           Test.Framework
 ------------------------------------------------------------------------------
 
