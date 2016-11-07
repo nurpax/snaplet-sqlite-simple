@@ -36,6 +36,7 @@ application.
 
 module Snap.Snaplet.Auth.Backends.SqliteSimple
   ( initSqliteAuth
+  , mkSqliteAuthMgr
   ) where
 
 ------------------------------------------------------------------------------
@@ -85,9 +86,8 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
     authTable <- liftIO $ C.lookupDefault "snap_auth_user" config "authTable"
     authSettings <- authSettingsFromConfig
     key <- liftIO $ getKey (asSiteKey authSettings)
-    let tableDesc = defAuthTable { tblName = authTable }
-    let manager = SqliteAuthManager tableDesc $
-                                      sqliteConn $ db ^# snapletValue
+    let manager = mkSqliteAuthMgr authTable $
+                                  sqliteConn $ db ^# snapletValue
     liftIO $ createTableIfMissing manager
     rng <- liftIO mkRNG
     return AuthManager
@@ -105,6 +105,15 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
   where
     desc = "An Sqlite backend for user authentication"
     datadir = Just $ liftM (++"/resources/auth") getDataDir
+
+------------------------------------------------------------------------------
+-- | Construct sqlite-simple auth manager
+--
+-- Can be used in command line tools
+mkSqliteAuthMgr :: T.Text -> MVar S.Connection -> SqliteAuthManager
+mkSqliteAuthMgr name conn = SqliteAuthManager tableDesc conn
+  where
+    tableDesc = defAuthTable { tblName = name }
 
 
 tableExists :: S.Connection -> T.Text -> IO Bool
