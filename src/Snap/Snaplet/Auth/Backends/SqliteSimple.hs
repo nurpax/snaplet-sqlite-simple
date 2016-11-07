@@ -96,6 +96,7 @@ initSqliteAuth sess db = makeSnaplet "sqlite-auth" desc datadir $ do
       , activeUser = Nothing
       , minPasswdLen = asMinPasswdLen authSettings
       , rememberCookieName = asRememberCookieName authSettings
+      , rememberCookieDomain = Nothing
       , rememberPeriod = asRememberPeriod authSettings
       , siteKey = key
       , lockout = asLockout authSettings
