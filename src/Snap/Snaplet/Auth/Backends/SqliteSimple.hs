@@ -1,6 +1,7 @@
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE FlexibleContexts      #-}
 
@@ -175,10 +176,16 @@ upgradeSchema conn pam fromVersion = do
       S.execute_ conn (addColumnQ (colRoles pam))
       S.execute_ conn (addColumnQ (colMeta pam))
 
+    upgrade 3 = do
+      S.execute_ conn (addEmailIndex (colEmail pam))
     upgrade _ = error "unknown version"
 
     addColumnQ (c,t) =
       Query $ T.concat [ "ALTER TABLE ", tblName pam, " ADD COLUMN ", c, " ", t]
+
+    addEmailIndex (emailC, _) =
+      Query $ T.concat [ "CREATE INDEX email_idx ON \""
+                       , tblName pam, "\" (" , emailC , ")"]
 
 
 ------------------------------------------------------------------------------
@@ -191,6 +198,7 @@ createTableIfMissing SqliteAuthManager{..} =
       upgradeSchema conn pamTable 0
       upgradeSchema conn pamTable 1
       upgradeSchema conn pamTable 2
+      upgradeSchema conn pamTable 3
 
 
 buildUid :: Int -> UserId
@@ -442,6 +450,19 @@ instance IAuthBackend SqliteAuthManager where
                 , " = ?"
                 ]
         querySingle pamConnPool q [login]
+
+#if MIN_VERSION_snap(1,1,0)
+    lookupByEmail SqliteAuthManager{..} email = do
+        let q = Query $ T.concat
+                [ "select ", T.intercalate "," cols, " from "
+                , tblName pamTable
+                , " where "
+                , fst (colEmail pamTable)
+                , " = ?"
+                ]
+        querySingle pamConnPool q [email]
+      where cols = map (fst . ($pamTable) . fst) colDef
+#endif
 
     lookupByRememberToken SqliteAuthManager{..} token = do
         let q = Query $ T.concat
